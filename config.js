@@ -24,7 +24,7 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_URL = "https://image.tmdb.org/t/p/w500";
 
 // 3. Funciones de Autenticación de Admin
-const ADMIN_PASSWORD = "2026";
+const ADMIN_PASSWORD = "1971";
 
 function verificarAdmin() {
   if (localStorage.getItem('nubaraPlayAdmin') !== 'true') {
