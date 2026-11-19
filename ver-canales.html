@@ -3,146 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canales TV - NubaraPlay</title>
+    <title>Canales en Vivo - NubaraPlay</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #141414; color: #fff; min-height: 100vh; overflow-x: hidden; }
-        
-        .navbar { position: fixed; top: 0; width: 100%; padding: 20px 4%; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent); transition: background 0.4s; }
-        .navbar.scrolled { background: #141414; }
-        .navbar-left { display: flex; align-items: center; gap: 25px; }
-        .logo { color: #e50914; font-size: 28px; font-weight: bold; text-decoration: none; }
-        .nav-links { display: flex; gap: 20px; list-style: none; }
-        .nav-links a { color: #e5e5e5; text-decoration: none; font-size: 14px; transition: color 0.4s; }
-        .nav-links a:hover, .nav-links a.active { color: #fff; font-weight: bold; }
-        .navbar-right { display: flex; align-items: center; gap: 20px; }
-        .user-info { background: #e50914; padding: 5px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; }
-        .logout-btn { background: transparent; border: 1px solid #fff; color: #fff; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .logout-btn:hover { background: rgba(255,255,255,0.1); }
+        :root {
+            --bg: #0a0a0c; --panel: #0d0d10; --panel2: #16161a; --border: #232329;
+            --text: #e4e4e7; --muted: #8b8b93; --orange: #f97316; --red1: #d12b3a; --red2: #8f1222;
+        }
+        body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .hidden { display: none !important; }
+        button { font-family: inherit; }
 
-        .hero-section { position: relative; height: 50vh; min-height: 400px; background: url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat; display: flex; align-items: flex-end; padding: 0 4% 40px; }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, #141414 5%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%); }
-        .hero-content { position: relative; z-index: 10; max-width: 700px; }
-        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(229, 9, 20, 0.2); border: 1px solid #e50914; color: #e50914; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
-        .hero-title { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 15px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .hero-desc { font-size: 16px; color: #a3a3a3; line-height: 1.6; margin-bottom: 25px; max-width: 500px; }
+        /* ============ TOPBAR ============ */
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); gap: 12px; flex-shrink: 0; }
+        .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .topbar-center { display: flex; align-items: center; gap: 14px; }
+        .ghost-btn { background: var(--panel2); border: 1px solid var(--border); color: #d4d4d8; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: .2s; }
+        .ghost-btn:hover { border-color: var(--orange); color: #fff; }
+        .brand { font-size: 17px; font-weight: 800; letter-spacing: .5px; color: #fff; }
+        .brand b { color: var(--orange); }
+        .user-tag { color: var(--orange); font-weight: 800; font-size: 15px; }
+        .status-dot { color: var(--muted); font-size: 12.5px; }
+        .status-dot::before { content: '●'; color: #22c55e; margin-right: 6px; font-size: 10px; }
+        .icon-btn { background: var(--panel2); border: 1px solid var(--border); color: #d4d4d8; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: .2s; }
+        .icon-btn:hover { border-color: var(--orange); color: #fff; }
+        .search-wrap { display: flex; align-items: center; gap: 8px; }
+        #searchInput { background: var(--panel2); border: 1px solid var(--border); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; width: 190px; outline: none; }
+        #searchInput:focus { border-color: var(--orange); }
+        .wifi { color: var(--muted); font-size: 16px; }
+        .clock { font-weight: 700; font-size: 15px; color: #fff; min-width: 74px; text-align: right; }
 
-        .agenda-section { padding: 40px 4%; background: linear-gradient(to bottom, #141414, #1a1a1a); border-top: 1px solid #333; border-bottom: 1px solid #333; }
-        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-        .section-title { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .agenda-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: thin; scrollbar-color: #e50914 transparent; }
-        .agenda-card { flex: 0 0 300px; background: #181818; border: 1px solid #333; border-radius: 12px; padding: 20px; transition: all 0.3s; cursor: pointer; position: relative; }
-        .agenda-card:hover { border-color: #e50914; transform: translateY(-3px); background: rgba(229, 9, 20, 0.05); }
-        .agenda-card.en-vivo { border-color: #e50914; animation: pulse-border 2s infinite; }
-        .agenda-time { color: #e50914; font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .agenda-match { font-size: 18px; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
-        .agenda-channel { font-size: 13px; color: #808080; display: flex; align-items: center; gap: 6px; }
-        .agenda-badge { position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-en-vivo { background: #e50914; color: #fff; animation: pulse 1.5s infinite; }
+        /* ============ LAYOUT ============ */
+        .body-grid { flex: 1; display: flex; min-height: 0; }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar { width: 92px; background: var(--panel); border-right: 1px solid var(--border); padding: 14px 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex-shrink: 0; }
+        .side-item { background: none; border: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; cursor: pointer; font-size: 11px; border-radius: 10px; margin: 0 8px; text-decoration: none; transition: .2s; }
+        .side-item .ico { font-size: 20px; line-height: 1; }
+        .side-item:hover { color: #fff; background: var(--panel2); }
+        .side-item.active { color: var(--orange); }
+        .side-item.danger:hover { color: #ef4444; border-color: #ef4444; }
+
+        /* ============ MAIN ============ */
+        .main-area { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
+        .player-shell { position: relative; background: #000; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; max-height: 64vh; margin: 0 auto; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+        .player-zoom { position: absolute; inset: 0; transition: transform .2s ease; }
+        .player-zoom iframe { width: 100%; height: 100%; border: none; }
+        .player-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); font-size: 16px; background: radial-gradient(circle at 50% 40%, #101018, #000); }
+        .player-empty .big { font-size: 44px; }
+        .player-title { position: absolute; right: 14px; bottom: 12px; display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.8); pointer-events: none; }
+        .player-title .fs { pointer-events: auto; cursor: pointer; font-size: 16px; opacity: .8; }
+        .player-shell:fullscreen { width: 100vw; height: 100vh; border-radius: 0; max-height: none; }
+
+        .controls { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
+        .ctrl-btn { background: var(--panel2); border: 1px solid var(--border); color: #d4d4d8; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-size: 13.5px; display: flex; align-items: center; gap: 7px; transition: .2s; }
+        .ctrl-btn:hover { border-color: var(--orange); color: #fff; }
+        .ctrl-btn.active-fav { color: #ffd700; border-color: #ffd700; }
+        .zoom-group { display: flex; align-items: center; gap: 6px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+        .zoom-group button { background: transparent; border: none; color: #d4d4d8; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .zoom-group button:hover { background: #26262c; color: #fff; }
+        .zoom-group span { min-width: 46px; text-align: center; font-size: 13px; font-weight: 700; }
+
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .chip { background: var(--panel2); border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s; }
+        .chip:hover { color: #fff; border-color: var(--orange); }
+        .chip.active { background: var(--orange); color: #141414; border-color: var(--orange); }
+        .chip-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; align-self: center; margin-right: 4px; }
+
+        /* ============ LISTA DE CANALES (derecha) ============ */
+        .channel-list { width: 300px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+        .list-nav { background: transparent; border: none; color: var(--muted); padding: 8px; cursor: pointer; font-size: 13px; }
+        .list-nav:hover { color: var(--orange); }
+        .list-scroll { flex: 1; overflow-y: auto; padding: 0 10px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: #2c2c33 transparent; }
+        .list-scroll::-webkit-scrollbar { width: 6px; } .list-scroll::-webkit-scrollbar-thumb { background: #2c2c33; border-radius: 3px; }
+        .chan-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 12px; cursor: pointer; transition: .2s; border: 1px solid transparent; }
+        .chan-item:hover { background: var(--panel2); }
+        .chan-item.active { background: linear-gradient(100deg, var(--red1), var(--red2)); box-shadow: 0 6px 18px rgba(209,43,58,.35); }
+        .chan-item.active .chan-name { color: #fff; font-weight: 700; }
+        .chan-item.active::before { content: '▶'; color: #fff; font-size: 13px; margin-right: -4px; }
+        .chan-logo { width: 58px; height: 46px; background: #1d1d22; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .chan-logo img { max-width: 90%; max-height: 88%; object-fit: contain; }
+        .chan-name { font-size: 14.5px; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .list-empty { color: var(--muted); text-align: center; padding: 30px 10px; font-size: 13px; }
+
+        /* ============ AGENDA ============ */
+        .agenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .agenda-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: .25s; position: relative; }
+        .agenda-card:hover { border-color: var(--orange); transform: translateY(-3px); }
+        .agenda-card.en-vivo { border-color: var(--red1); }
+        .agenda-time { color: var(--orange); font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+        .agenda-match { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #fff; }
+        .agenda-channel { font-size: 12.5px; color: var(--muted); }
+        .agenda-badge { position: absolute; top: 10px; right: 10px; padding: 3px 10px; border-radius: 10px; font-size: 10.5px; font-weight: 800; }
+        .badge-en-vivo { background: var(--red1); color: #fff; animation: pulse 1.5s infinite; }
         .badge-proximo { background: #17a2b8; color: #fff; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
-        .content-section { padding: 40px 4%; }
-        .categoria-section { margin-bottom: 60px; }
-        .categoria-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .categoria-icon { font-size: 22px; }
-        .categoria-title { font-size: 20px; font-weight: 700; color: #fff; }
-        .categoria-count { color: #808080; font-size: 14px; margin-left: auto; }
-        .grid-canales { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
-
-        .card { background: #181818; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative; border: 1px solid #222; }
-        .card:hover { transform: scale(1.05); z-index: 100; border-color: #e50914; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
-        .card-img-container { width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: #000; padding: 15px; }
-        .card img { width: 100%; height: 100%; object-fit: contain; }
-        .card-name { padding: 14px 12px; text-align: center; font-size: 14px; font-weight: 600; color: #fff; background: #181818; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card:hover .card-name { color: #e50914; }
-        .fav-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; opacity: 0; transition: all 0.3s; display: flex; align-items: center; justify-content: center; z-index: 10; }
-        .card:hover .fav-btn { opacity: 1; }
-        .fav-btn.active { color: #ffd700; opacity: 1; background: rgba(0,0,0,0.8); }
-
-        #modalCanal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px; }
-        #modalCanal.activo { display: flex; }
-        .modal-box { background: #181818; border-radius: 16px; width: 100%; max-width: 1100px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8); border: 1px solid #333; }
-        .modal-top { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; background: #000; border-bottom: 1px solid #333; }
-        .modal-top h3 { font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .modal-close { background: #181818; border: 1px solid #333; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
-        .modal-close:hover { background: #e50914; border-color: #e50914; }
-        .modal-video { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
-        .modal-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
-
-        .loading, .no-results { text-align: center; padding: 80px 20px; color: #808080; font-size: 18px; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @keyframes pulse-border { 0% { border-color: #e50914; } 50% { border-color: #ff4444; } 100% { border-color: #e50914; } }
-
-        @media (max-width: 768px) {
-            .hero-title { font-size: 32px; }
-            .grid-canales { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-            .nav-links { display: none; }
-            .fav-btn { opacity: 1; }
-            .agenda-card { flex: 0 0 260px; }
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; }
+            .body-grid { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 6px; }
+            .side-item { flex: 0 0 auto; margin: 0; }
+            .channel-list { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+            .list-scroll { flex-direction: row; overflow-x: auto; padding: 10px; }
+            .chan-item { flex: 0 0 220px; }
+            .player-shell { max-height: none; }
+            #searchInput { width: 120px; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar" id="navbar">
-        <div class="navbar-left">
-            <a href="index.html" class="logo">NUBARAPLAY</a>
-            <ul class="nav-links">
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="ver-canales.html" class="active">Canales TV</a></li>
-                <li><a href="genero.html">Películas</a></li>
-            </ul>
+    <!-- ================= TOPBAR ================= -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="ghost-btn" id="btnVolver">← Volver</button>
+            <button class="ghost-btn" id="btnTopHistorial">🕐 Historial</button>
         </div>
-        <div class="navbar-right">
-            <span class="user-info" id="userInfo">Usuario</span>
-            <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
+        <div class="topbar-center">
+            <span class="brand">NUBARA<b>PLAY</b></span>
+            <span class="user-tag" id="userInfo">USUARIO</span>
+            <span class="status-dot">Catálogo actualizado</span>
         </div>
-    </nav>
-
-    <div class="hero-section">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <div class="hero-badge">🔴 En Vivo Ahora</div>
-            <h1 class="hero-title">Deportes y Entretenimiento Sin Límites</h1>
-            <p class="hero-desc">Accede a la mejor programación en vivo. Fútbol, noticias, cine y mucho más.</p>
-        </div>
-    </div>
-
-    <div class="agenda-section" id="agenda">
-        <div class="section-header">
-            <h2 class="section-title">📅 Agenda Deportiva Destacada</h2>
-        </div>
-        <div class="agenda-scroll" id="agendaContainer">
-            <div class="loading" style="padding: 20px;">Cargando agenda...</div>
-        </div>
-    </div>
-
-    <div class="content-section" id="contenido">
-        <div class="loading">Cargando catálogo de canales...</div>
-    </div>
-
-    <div id="modalCanal" onclick="cerrarModal(event)">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <div class="modal-top">
-                <h3><span style="color: #e50914;">●</span> <span id="modalTitulo">En Vivo</span></h3>
-                <button class="modal-close" onclick="cerrarModal()">✕</button>
+        <div class="topbar-right">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="Buscar canal..." class="hidden">
+                <button class="icon-btn" id="btnSearch">🔍</button>
             </div>
-            <div class="modal-video">
-                <iframe id="modalIframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-            </div>
+            <button class="icon-btn" id="btnUser">👤</button>
+            <span class="wifi">📶</span>
+            <span class="clock" id="clock">--:--</span>
         </div>
+    </header>
+
+    <div class="body-grid">
+        <!-- ================= SIDEBAR ================= -->
+        <aside class="sidebar">
+            <button class="side-item active" data-view="tv"><span class="ico">📺</span>TV</button>
+            <button class="side-item" data-view="destacados"><span class="ico">👍</span>Destacados</button>
+            <button class="side-item" data-view="agenda"><span class="ico">⚽</span>Agenda</button>
+            <a class="side-item" href="genero.html"><span class="ico">🎬</span>Películas</a>
+            <button class="side-item" data-view="historial"><span class="ico">🕐</span>Historial</button>
+            <button class="side-item danger" id="btnSalir" style="margin-top:auto"><span class="ico">⏻</span>Salir</button>
+        </aside>
+
+        <!-- ================= MAIN ================= -->
+        <main class="main-area">
+            <!-- Vista Reproductor -->
+            <section id="viewPlayer" style="display:flex; flex-direction:column; gap:14px;">
+                <div class="player-shell" id="playerShell">
+                    <div class="player-zoom" id="playerZoom"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>
+                    <div class="player-empty" id="playerEmpty"><span class="big">📡</span>Selecciona un canal de la lista para reproducir</div>
+                    <div class="player-title"><span id="playerTitleText"></span><span class="fs" id="btnFsInline" title="Pantalla completa">⛶</span></div>
+                </div>
+                <div class="controls">
+                    <button class="ctrl-btn" id="btnPrev">⏮ Anterior</button>
+                    <button class="ctrl-btn" id="btnNext">⏭ Siguiente</button>
+                    <button class="ctrl-btn" id="btnMute">🔊</button>
+                    <div class="zoom-group"><button id="btnZoomOut">−</button><span id="zoomVal">100%</span><button id="btnZoomIn">+</button></div>
+                    <button class="ctrl-btn" id="btnFav">☆ Favorito</button>
+                    <button class="ctrl-btn" id="btnFullscreen">⛶ Pantalla completa</button>
+                </div>
+                <div class="chips" id="chips"></div>
+            </section>
+
+            <!-- Vista Agenda -->
+            <section id="viewAgenda" class="hidden">
+                <h2 style="font-size:20px; margin-bottom:16px;">📅 Agenda Deportiva</h2>
+                <div class="agenda-grid" id="agendaContainer"><div class="list-empty">Cargando agenda...</div></div>
+            </section>
+        </main>
+
+        <!-- ================= LISTA DERECHA ================= -->
+        <aside class="channel-list" id="channelList">
+            <button class="list-nav" id="btnScrollUp">▲</button>
+            <div class="list-scroll" id="listScroll"></div>
+            <button class="list-nav" id="btnScrollDown">▼</button>
+        </aside>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script>
+        const $ = id => document.getElementById(id);
+
+        // ---- Autenticación ----
         const savedUser = localStorage.getItem('nubaraPlayUser');
-        if (!savedUser) { window.location.href = 'index.html'; } 
-        else { document.getElementById('userInfo').textContent = JSON.parse(savedUser).tipo === 'demo' ? 'DEMO' : 'PREMIUM'; }
+        if (!savedUser) { window.location.href = 'index.html'; }
+        else { $('userInfo').textContent = JSON.parse(savedUser).tipo === 'demo' ? 'DEMO' : 'PREMIUM'; }
+        $('btnSalir').onclick = () => { localStorage.removeItem('nubaraPlayUser'); localStorage.removeItem('nubaraPlayUserExpiry'); location.href = 'index.html'; };
+        $('btnVolver').onclick = () => history.back();
 
-        function cerrarSesion() { localStorage.removeItem('nubaraPlayUser'); localStorage.removeItem('nubaraPlayUserExpiry'); window.location.href = 'index.html'; }
-
+        // ---- Firebase ----
         const firebaseConfig = {
             apiKey: "AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",
             authDomain: "nubaraplay.firebaseapp.com",
@@ -151,183 +204,192 @@
             messagingSenderId: "873822057409",
             appId: "1:873822057409:web:f854a974f457eedd0c7540"
         };
-        
-        try { firebase.initializeApp(firebaseConfig); } catch (e) { console.log("Firebase ya inicializado"); }
+        try { firebase.initializeApp(firebaseConfig); } catch (e) {}
         const db = firebase.firestore();
 
-        window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50));
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarModal(); });
+        // ---- Estado ----
+        let canales = [], agendaEvents = [];
+        let currentView = 'tv', currentCat = 'Todos', searchQuery = '';
+        let zoom = 100, muted = false, playingId = null;
 
-        const iconosCat = { 'Deportes': '⚽', 'Noticias': '📰', 'Entretenimiento': '', 'Musica': '🎵', 'Infantil': '🧸', 'Default': '📡' };
+        const getFavs = () => JSON.parse(localStorage.getItem('nubaraPlayFavoritos') || '[]');
+        const getHist = () => JSON.parse(localStorage.getItem('nubaraPlayHistorial') || '[]');
 
-        // ✅ VERIFICAR SI UN EVENTO YA TERMINÓ
-        function eventoYaTermino(evento) {
-            if (!evento.horaFin || evento.dia?.toUpperCase() !== 'HOY') return false;
-            
-            const ahora = new Date();
-            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
-            
-            return horaActual > evento.horaFin;
+        // ---- Reloj (12h AM/PM como Xuper) ----
+        function tickClock() {
+            const d = new Date(); let h = d.getHours();
+            const m = String(d.getMinutes()).padStart(2, '0');
+            const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+            $('clock').textContent = h + ':' + m + ' ' + ap;
+        }
+        setInterval(tickClock, 1000); tickClock();
+
+        // ---- Datos en tiempo real ----
+        db.collection('canales').onSnapshot(snap => {
+            canales = [];
+            snap.forEach(doc => { const c = doc.data(); if (c.categoria === 'Peliculas') return; canales.push({ id: doc.id, ...c }); });
+            renderChips(); renderList();
+        }, err => console.error('Error canales:', err));
+
+        db.collection('agenda').onSnapshot(snap => {
+            agendaEvents = []; snap.forEach(doc => agendaEvents.push({ id: doc.id, ...doc.data() }));
+            renderAgenda();
+        }, err => console.error('Error agenda:', err));
+
+        // ---- Chips de categoría ----
+        function renderChips() {
+            const cats = ['Todos', ...[...new Set(canales.map(c => c.categoria).filter(Boolean))].sort()];
+            const box = $('chips'); box.innerHTML = '';
+            const lbl = document.createElement('span'); lbl.className = 'chip-label'; lbl.textContent = 'Categorías:'; box.appendChild(lbl);
+            cats.forEach(cat => {
+                const b = document.createElement('button');
+                b.className = 'chip' + (cat === currentCat ? ' active' : '');
+                b.textContent = cat;
+                b.onclick = () => { currentCat = cat; if (currentView !== 'tv') setView('tv'); renderChips(); renderList(); };
+                box.appendChild(b);
+            });
         }
 
-        // ✅ OBTENER ESTADO DEL EVENTO
-        function getEstadoEvento(evento) {
-            if (evento.dia?.toUpperCase() !== 'HOY') return { texto: 'Próximo', clase: 'badge-proximo' };
-            
-            const ahora = new Date();
-            const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
-            
-            if (horaActual < evento.horaInicio) {
-                return { texto: 'Próximo', clase: 'badge-proximo' };
-            } else if (horaActual >= evento.horaInicio && horaActual <= evento.horaFin) {
-                return { texto: '🔴 EN VIVO', clase: 'badge-en-vivo' };
-            } else {
-                return { texto: 'Finalizado', clase: '' };
-            }
+        // ---- Lista según vista/filtros ----
+        function getList() {
+            let list;
+            if (currentView === 'destacados') list = canales.filter(c => getFavs().includes(c.id));
+            else if (currentView === 'historial') { const h = getHist(); list = h.map(x => canales.find(c => c.id === x.id)).filter(Boolean); }
+            else list = canales.filter(c => currentCat === 'Todos' || c.categoria === currentCat);
+            if (searchQuery) list = list.filter(c => (c.nombre || '').toLowerCase().includes(searchQuery));
+            return list;
         }
 
-        // ✅ CARGAR AGENDA FILTRANDO EVENTOS FINALIZADOS
-        db.collection("agenda").onSnapshot((snapshot) => {
-            const container = document.getElementById('agendaContainer');
-            
-            if (snapshot.empty) { 
-                container.innerHTML = '<div style="padding: 20px; color: #888;">No hay eventos programados.</div>'; 
-                return;
-            }
-            
-            let eventos = [];
-            snapshot.forEach((doc) => {
-                const ev = { id: doc.id, ...doc.data() };
-                // ✅ FILTRAR: Solo mostrar eventos que NO han terminado
-                if (!eventoYaTermino(ev)) {
-                    eventos.push(ev);
-                }
+        function renderList() {
+            const box = $('listScroll'); box.innerHTML = '';
+            const list = getList();
+            if (!list.length) { box.innerHTML = '<div class="list-empty">No hay canales para mostrar</div>'; return; }
+            list.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'chan-item' + (c.id === playingId ? ' active' : '');
+                const logo = document.createElement('div'); logo.className = 'chan-logo';
+                const img = document.createElement('img'); img.loading = 'lazy'; img.src = c.logo || '';
+                img.onerror = () => { img.src = 'https://via.placeholder.com/120x90/1d1d22/808080?text=TV'; };
+                logo.appendChild(img);
+                const name = document.createElement('span'); name.className = 'chan-name'; name.textContent = c.nombre;
+                item.appendChild(logo); item.appendChild(name);
+                item.onclick = () => play(c);
+                box.appendChild(item);
             });
-            
-            // Ordenar por día y hora de inicio
-            const ordenDias = { 'HOY': 0, 'MAÑANA': 1, 'LUNES': 2, 'MARTES': 3, 'MIÉRCOLES': 4, 'JUEVES': 5, 'VIERNES': 6, 'SÁBADO': 7, 'DOMINGO': 8 };
-            
-            eventos.sort((a, b) => {
-                const diaA = ordenDias[a.dia?.toUpperCase()] ?? 99;
-                const diaB = ordenDias[b.dia?.toUpperCase()] ?? 99;
-                if (diaA !== diaB) return diaA - diaB;
-                return (a.horaInicio || '').localeCompare(b.horaInicio || '');
-            });
-            
-            if (eventos.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; color: #888;">No hay eventos activos en este momento.</div>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            eventos.forEach((ev) => {
+        }
+
+        // ---- Reproducir ----
+        function play(canal) {
+            playingId = canal.id;
+            $('playerFrame').src = canal.url || '';
+            $('playerTitleText').textContent = canal.nombre || '';
+            $('playerEmpty').classList.add('hidden');
+            $('viewPlayer').classList.remove('hidden'); $('viewAgenda').classList.add('hidden');
+            $('channelList').classList.remove('hidden');
+
+            // historial
+            let h = getHist().filter(x => x.id !== canal.id);
+            h.unshift({ id: canal.id, nombre: canal.nombre, logo: canal.logo, url: canal.url, ts: Date.now() });
+            localStorage.setItem('nubaraPlayHistorial', JSON.stringify(h.slice(0, 20)));
+
+            // visitas (solo canales reales)
+            if (canales.some(c => c.id === canal.id))
+                db.collection('canales').doc(canal.id).update({ visitas: (canal.visitas || 0) + 1 }).catch(() => {});
+
+            updateFavBtn(); renderList();
+            const act = $('listScroll').querySelector('.chan-item.active');
+            if (act) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function navigate(delta) {
+            const list = getList(); if (!list.length) return;
+            let idx = list.findIndex(c => c.id === playingId);
+            idx = (idx + delta + list.length) % list.length;
+            play(list[idx]);
+        }
+
+        // ---- Controles ----
+        $('btnPrev').onclick = () => navigate(-1);
+        $('btnNext').onclick = () => navigate(1);
+        $('btnMute').onclick = () => { muted = !muted; $('btnMute').textContent = muted ? '🔇' : '🔊'; };
+        function setZoom(v) { zoom = Math.max(50, Math.min(200, v)); $('playerZoom').style.transform = 'scale(' + zoom / 100 + ')'; $('zoomVal').textContent = zoom + '%'; }
+        $('btnZoomIn').onclick = () => setZoom(zoom + 10);
+        $('btnZoomOut').onclick = () => setZoom(zoom - 10);
+        $('btnFullscreen').onclick = $('btnFsInline').onclick = () => {
+            const el = $('playerShell');
+            if (!document.fullscreenElement) el.requestFullscreen().catch(() => {}); else document.exitFullscreen();
+        };
+        function updateFavBtn() {
+            const isFav = playingId && getFavs().includes(playingId);
+            $('btnFav').textContent = isFav ? '★ Favorito' : '☆ Favorito';
+            $('btnFav').classList.toggle('active-fav', !!isFav);
+        }
+        $('btnFav').onclick = () => {
+            if (!playingId) return;
+            let f = getFavs(); const i = f.indexOf(playingId);
+            if (i > -1) f.splice(i, 1); else f.push(playingId);
+            localStorage.setItem('nubaraPlayFavoritos', JSON.stringify(f));
+            updateFavBtn(); renderList();
+        };
+
+        // ---- Búsqueda ----
+        $('btnSearch').onclick = () => { $('searchInput').classList.toggle('hidden'); $('searchInput').focus(); };
+        $('searchInput').oninput = e => { searchQuery = e.target.value.toLowerCase(); renderList(); };
+
+        // ---- Vistas del sidebar ----
+        function setView(v) {
+            currentView = v;
+            document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+            $('viewPlayer').classList.toggle('hidden', v === 'agenda');
+            $('viewAgenda').classList.toggle('hidden', v !== 'agenda');
+            $('channelList').classList.toggle('hidden', v === 'agenda');
+            renderList();
+        }
+        document.querySelectorAll('.side-item[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+        $('btnTopHistorial').onclick = () => setView('historial');
+
+        // ---- Scroll lista ----
+        $('btnScrollUp').onclick = () => $('listScroll').scrollBy({ top: -240, behavior: 'smooth' });
+        $('btnScrollDown').onclick = () => $('listScroll').scrollBy({ top: 240, behavior: 'smooth' });
+
+        // ---- Agenda ----
+        function eventoYaTermino(ev) {
+            if (!ev.horaFin || (ev.dia || '').toUpperCase() !== 'HOY') return false;
+            const d = new Date();
+            const now = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            return now > ev.horaFin;
+        }
+        function getEstadoEvento(ev) {
+            if ((ev.dia || '').toUpperCase() !== 'HOY') return { texto: 'Próximo', clase: 'badge-proximo' };
+            const d = new Date();
+            const now = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            if (now < ev.horaInicio) return { texto: 'Próximo', clase: 'badge-proximo' };
+            if (now >= ev.horaInicio && now <= ev.horaFin) return { texto: '🔴 EN VIVO', clase: 'badge-en-vivo' };
+            return null;
+        }
+        function renderAgenda() {
+            const box = $('agendaContainer');
+            const eventos = agendaEvents.filter(ev => !eventoYaTermino(ev));
+            if (!eventos.length) { box.innerHTML = '<div class="list-empty">No hay eventos activos</div>'; return; }
+            const orden = { 'HOY': 0, 'MAÑANA': 1, 'LUNES': 2, 'MARTES': 3, 'MIÉRCOLES': 4, 'JUEVES': 5, 'VIERNES': 6, 'SÁBADO': 7, 'DOMINGO': 8 };
+            eventos.sort((a, b) => (orden[(a.dia || '').toUpperCase()] ?? 99) - (orden[(b.dia || '').toUpperCase()] ?? 99) || (a.horaInicio || '').localeCompare(b.horaInicio || ''));
+            box.innerHTML = '';
+            eventos.forEach(ev => {
                 const estado = getEstadoEvento(ev);
                 const card = document.createElement('div');
-                card.className = 'agenda-card' + (estado.clase === 'badge-en-vivo' ? ' en-vivo' : '');
-                
-                let badgeHTML = '';
-                if (estado.clase) {
-                    badgeHTML = `<div class="agenda-badge ${estado.clase}">${estado.texto}</div>`;
+                card.className = 'agenda-card' + (estado && estado.clase === 'badge-en-vivo' ? ' en-vivo' : '');
+                if (estado && estado.clase) {
+                    const badge = document.createElement('div'); badge.className = 'agenda-badge ' + estado.clase; badge.textContent = estado.texto; card.appendChild(badge);
                 }
-                
-                card.innerHTML = `
-                    ${badgeHTML}
-                    <div class="agenda-time">🕒 ${ev.dia || ''} - ${ev.horaInicio || ''} a ${ev.horaFin || ''}</div>
-                    <div class="agenda-match">${ev.nombre}</div>
-                    <div class="agenda-channel"> ${ev.canal || ''}</div>
-                `;
-                card.onclick = function() { abrirModal({ nombre: ev.nombre, url: ev.url, id: ev.id }); };
-                container.appendChild(card);
+                const t = document.createElement('div'); t.className = 'agenda-time'; t.textContent = '🕒 ' + (ev.dia || '') + ' - ' + (ev.horaInicio || '') + ' a ' + (ev.horaFin || '');
+                const m = document.createElement('div'); m.className = 'agenda-match'; m.textContent = ev.nombre || '';
+                const c = document.createElement('div'); c.className = 'agenda-channel'; c.textContent = '📡 ' + (ev.canal || '');
+                card.append(t, m, c);
+                card.onclick = () => { setView('tv'); play({ id: 'agenda-' + ev.id, nombre: ev.nombre, url: ev.url }); };
+                box.appendChild(card);
             });
-        }, (error) => {
-            console.error("Error cargando agenda:", error);
-            document.getElementById('agendaContainer').innerHTML = '<div style="padding: 20px; color: #e50914;">Error al cargar agenda</div>';
-        });
-
-        // ✅ CARGAR CANALES ORGANIZADOS POR CATEGORÍA
-        db.collection("canales").onSnapshot((snapshot) => {
-            const contenido = document.getElementById('contenido');
-            if (snapshot.empty) { contenido.innerHTML = '<div class="no-results">No hay canales disponibles</div>'; return; }
-
-            const categoriasMap = {};
-            snapshot.forEach((doc) => {
-                const canal = doc.data();
-                if (canal.categoria === 'Peliculas') return; 
-                const cat = canal.categoria || 'Default';
-                if (!categoriasMap[cat]) categoriasMap[cat] = [];
-                categoriasMap[cat].push({ id: doc.id, ...canal });
-            });
-
-            contenido.innerHTML = '';
-            Object.keys(categoriasMap).sort().forEach(categoria => {
-                const canales = categoriasMap[categoria];
-                const icono = iconosCat[categoria] || '📡';
-                
-                const section = document.createElement('div');
-                section.className = 'categoria-section';
-                section.innerHTML = '<div class="categoria-header"><span class="categoria-icon">' + icono + '</span><h2 class="categoria-title">' + categoria + '</h2><span class="categoria-count">' + canales.length + ' canales</span></div><div class="grid-canales" id="grid-' + categoria.replace(/\s+/g, '') + '"></div>';
-                contenido.appendChild(section);
-
-                const grid = section.querySelector('.grid-canales');
-                canales.forEach(canal => {
-                    const favoritos = JSON.parse(localStorage.getItem('nubaraPlayFavoritos') || '[]');
-                    const esFav = favoritos.includes(canal.id);
-                    
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = '<div class="card-img-container"><img src="' + canal.logo + '" alt="' + canal.nombre + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/200x120/181818/808080?text=TV\'"></div><div class="card-name">' + canal.nombre + '</div><button class="fav-btn ' + (esFav ? 'active' : '') + '" onclick="toggleFavorito(\'' + canal.id + '\', event)">' + (esFav ? '★' : '☆') + '</button>';
-                    card.onclick = function(e) { if (!e.target.classList.contains('fav-btn')) abrirModal(canal); };
-                    grid.appendChild(card);
-                });
-            });
-        }, (error) => {
-            console.error("Error cargando canales:", error);
-            document.getElementById('contenido').innerHTML = '<div class="no-results">Error al cargar canales</div>';
-        });
-
-        // ✅ ABRIR MODAL Y REGISTRAR VISUALIZACIÓN
-        function abrirModal(canal) {
-            document.getElementById('modalTitulo').textContent = canal.nombre;
-            document.getElementById('modalIframe').src = canal.url;
-            document.getElementById('modalCanal').classList.add('activo');
-            document.body.style.overflow = 'hidden';
-            
-            if(canal.id) db.collection("canales").doc(canal.id).update({ visitas: (canal.visitas || 0) + 1 }).catch(() => {});
-            
-            const usuario = JSON.parse(localStorage.getItem('nubaraPlayUser') || '{}');
-            db.collection("visualizaciones").add({
-                usuarioId: usuario.id || 'anonimo',
-                usuarioNombre: usuario.nombre || 'Anónimo',
-                tipo: 'canal',
-                contenidoId: canal.id,
-                nombre: canal.nombre,
-                categoria: canal.categoria || 'General',
-                fecha: new Date()
-            }).catch((err) => console.log("Error registrando visualización:", err));
         }
-
-        function cerrarModal(e) {
-            if (e && e.target !== e.currentTarget && e.type === 'click') return;
-            document.getElementById('modalCanal').classList.remove('activo');
-            document.getElementById('modalIframe').src = '';
-            document.body.style.overflow = 'auto';
-        }
-
-        function toggleFavorito(id, event) {
-            event.stopPropagation();
-            let favoritos = JSON.parse(localStorage.getItem('nubaraPlayFavoritos') || '[]');
-            const index = favoritos.indexOf(id);
-            if (index > -1) favoritos.splice(index, 1); else favoritos.push(id);
-            localStorage.setItem('nubaraPlayFavoritos', JSON.stringify(favoritos));
-            const btn = event.target.closest('.fav-btn');
-            if (index > -1) { btn.classList.remove('active'); btn.innerHTML = '☆'; } 
-            else { btn.classList.add('active'); btn.innerHTML = '★'; }
-        }
-
-        // ✅ ACTUALIZAR AGENDA CADA MINUTO (para ocultar eventos finalizados)
-        setInterval(() => {
-            location.reload();
-        }, 60000);
+        setInterval(renderAgenda, 30000); // actualiza estados sin recargar la página
     </script>
 </body>
 </html>
