@@ -3,419 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NubaraPlay</title>
+<title>Canales en Vivo - NubaraPlay</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--morado:#a855f7;--texto:#e5e5e5;--gris:#888}
-html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-family:'Segoe UI',Arial,sans-serif}
+:root{--bg:#0a0a0c;--panel:#0d0d10;--panel2:#16161a;--border:#232329;--text:#e4e4e7;--muted:#8b8b93;--orange:#f97316;--red1:#d12b3a;--red2:#8f1222}
+body{font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.hidden{display:none!important}
+button{font-family:inherit}
 
-#player{position:fixed;inset:0;background:#000;z-index:1}
-#player iframe{width:100%;height:100%;border:none;display:block}
-#empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#333;font-size:15px;z-index:2}
-#empty span{font-size:46px;opacity:.5}
+/* ===== TOPBAR ===== */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0}
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-center{display:flex;align-items:center;gap:14px}
+.ghost-btn{background:var(--panel2);border:1px solid var(--border);color:#d4d4d8;padding:8px 16px;border-radius:999px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:.2s}
+.ghost-btn:hover{border-color:var(--orange);color:#fff}
+.brand{font-size:17px;font-weight:800;letter-spacing:.5px;color:#fff}
+.brand b{color:var(--orange)}
+.user-tag{color:var(--orange);font-weight:800;font-size:15px}
+.status-dot{color:var(--muted);font-size:12.5px}
+.status-dot::before{content:'●';color:#22c55e;margin-right:6px;font-size:10px}
+.icon-btn{background:var(--panel2);border:1px solid var(--border);color:#d4d4d8;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.icon-btn:hover{border-color:var(--orange);color:#fff}
+#searchInput{background:var(--panel2);border:1px solid var(--border);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;width:190px;outline:none}
+#searchInput:focus{border-color:var(--orange)}
+.clock{font-weight:700;font-size:15px;color:#fff;min-width:74px;text-align:right}
+.sort-wrap{position:relative}
+.sort-menu{position:absolute;right:0;top:44px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:6px;display:none;flex-direction:column;gap:2px;z-index:50;min-width:150px}
+.sort-menu.open{display:flex}
+.sort-menu button{background:none;border:none;color:#d4d4d8;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;text-align:left}
+.sort-menu button:hover,.sort-menu button.active{background:rgba(249,115,22,.15);color:var(--orange)}
 
-#topbar{position:fixed;top:0;left:0;right:0;z-index:15;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.9),transparent);pointer-events:none}
-#topbar>*{pointer-events:auto}
-#topbar .nav-btns{display:flex;gap:8px}
-#topbar .nav-btns button{background:rgba(20,20,25,.85);border:1px solid #2a2a32;color:var(--texto);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.5px;transition:.2s}
-#topbar .nav-btns button:hover{background:var(--morado);border-color:var(--morado)}
-#topbar .user-info{display:flex;align-items:center;gap:12px}
-#topbar .user-tag{background:var(--morado);color:#fff;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px}
-#topbar .clock{color:var(--gris);font-family:monospace;font-size:12px}
+/* ===== LAYOUT ===== */
+.body-grid{flex:1;display:flex;min-height:0}
 
-#lista{
-  position:fixed;top:50px;left:0;width:290px;max-height:calc(100vh - 160px);z-index:10;
-  background:rgba(8,8,12,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  border-right:1px solid #1c1c22;border-bottom:1px solid #1c1c22;border-bottom-right-radius:10px;
-  display:flex;flex-direction:column;transition:opacity .2s,visibility .2s;
+/* ===== SIDEBAR ===== */
+.sidebar{width:92px;background:var(--panel);border-right:1px solid var(--border);padding:14px 0;display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex-shrink:0}
+.side-item{background:none;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;cursor:pointer;font-size:11px;border-radius:10px;margin:0 8px;text-decoration:none;transition:.2s}
+.side-item .ico{font-size:20px;line-height:1}
+.side-item:hover{color:#fff;background:var(--panel2)}
+.side-item.active{color:var(--orange)}
+.side-item.danger:hover{color:#ef4444}
+
+/* ===== MAIN ===== */
+.main-area{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0;overflow-y:auto;position:relative}
+.player-shell{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:16/9;max-height:62vh;margin:0 auto;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.player-zoom{position:absolute;inset:0;transition:transform .2s ease}
+.player-zoom iframe{width:100%;height:100%;border:none}
+.player-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:16px;background:radial-gradient(circle at 50% 40%,#101018,#000)}
+.player-empty .big{font-size:44px}
+.player-title{position:absolute;right:14px;bottom:12px;display:flex;align-items:center;gap:12px;font-size:17px;font-weight:700;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;z-index:5}
+.player-title .fs{pointer-events:auto;cursor:pointer;font-size:16px;opacity:.8}
+/* multi-pantalla */
+.multi-grid{position:absolute;inset:0;display:grid;gap:4px;background:#000}
+.multi-grid.g2{grid-template-columns:1fr 1fr}
+.multi-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.m-cell{position:relative;background:#0a0a0c;border:2px solid transparent;cursor:pointer;overflow:hidden}
+.m-cell.active-slot{border-color:var(--orange)}
+.m-cell iframe{width:100%;height:100%;border:none;pointer-events:none}
+.m-cell .m-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4b4b52;font-size:13px}
+.m-cell .m-name{position:absolute;left:8px;bottom:6px;font-size:12px;font-weight:700;color:#fff;text-shadow:0 2px 8px #000;pointer-events:none}
+.m-cell .m-close{position:absolute;right:6px;top:6px;background:rgba(0,0,0,.6);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:12px;display:none}
+.m-cell:hover .m-close{display:block}
+.player-shell:fullscreen{width:100vw;height:100vh;border-radius:0;max-height:none}
+
+/* ===== CONTROLES ===== */
+.controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px}
+.ctrl-btn{background:var(--panel2);border:1px solid var(--border);color:#d4d4d8;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13.5px;display:flex;align-items:center;gap:7px;transition:.2s}
+.ctrl-btn:hover{border-color:var(--orange);color:#fff}
+.ctrl-btn.active-fav{color:#ffd700;border-color:#ffd700}
+.ctrl-btn.active-multi{color:var(--orange);border-color:var(--orange)}
+.zoom-group{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:4px}
+.zoom-group button{background:transparent;border:none;color:#d4d4d8;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px}
+.zoom-group button:hover{background:#26262c;color:#fff}
+.zoom-group span{min-width:46px;text-align:center;font-size:13px;font-weight:700}
+
+/* ===== CHIPS ===== */
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.chip{background:var(--panel2);border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.chip:hover{color:#fff;border-color:var(--orange)}
+.chip.active{background:var(--orange);color:#141414;border-color:var(--orange)}
+.chip-label{color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;align-self:center;margin-right:4px}
+
+/* ===== LISTA DERECHA (OCULTABLE) ===== */
+.channel-list{width:300px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s ease,opacity .25s;overflow:hidden}
+.channel-list.collapsed{width:0;border-left:none;opacity:0}
+.list-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 0}
+.list-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.list-toggle{background:var(--panel2);border:1px solid var(--border);color:#d4d4d8;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:12px}
+.list-toggle:hover{border-color:var(--orange);color:#fff}
+#btnShowList{position:absolute;right:16px;top:16px;z-index:20;background:var(--panel2);border:1px solid var(--border);color:#d4d4d8;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:15px;display:none}
+#btnShowList:hover{border-color:var(--orange);color:#fff}
+.list-nav{background:transparent;border:none;color:var(--muted);padding:8px;cursor:pointer;font-size:13px}
+.list-nav:hover{color:var(--orange)}
+.list-scroll{flex:1;overflow-y:auto;padding:0 10px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:#2c2c33 transparent}
+.list-scroll::-webkit-scrollbar{width:6px}.list-scroll::-webkit-scrollbar-thumb{background:#2c2c33;border-radius:3px}
+.chan-item{display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;cursor:pointer;transition:.2s;border:1px solid transparent;flex-shrink:0}
+.chan-item:hover{background:var(--panel2)}
+.chan-item.active{background:linear-gradient(100deg,var(--red1),var(--red2));box-shadow:0 6px 18px rgba(209,43,58,.35)}
+.chan-item.active .chan-name{color:#fff;font-weight:700}
+.chan-item.active::before{content:'▶';color:#fff;font-size:13px;margin-right:-4px}
+.chan-logo{width:58px;height:46px;background:#1d1d22;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.chan-logo img{max-width:90%;max-height:88%;object-fit:contain}
+.chan-name{font-size:14.5px;color:#d4d4d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:13px}
+
+/* ===== AGENDA ===== */
+.agenda-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.agenda-card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:.25s;position:relative}
+.agenda-card:hover{border-color:var(--orange);transform:translateY(-3px)}
+.agenda-card.en-vivo{border-color:var(--red1)}
+.agenda-time{color:var(--orange);font-size:12.5px;font-weight:700;margin-bottom:8px}
+.agenda-match{font-size:17px;font-weight:700;margin-bottom:6px;color:#fff}
+.agenda-channel{font-size:12.5px;color:var(--muted)}
+.agenda-badge{position:absolute;top:10px;right:10px;padding:3px 10px;border-radius:10px;font-size:10.5px;font-weight:800}
+.badge-en-vivo{background:var(--red1);color:#fff;animation:pulse 1.5s infinite}
+.badge-proximo{background:#17a2b8;color:#fff}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+body{overflow:auto;height:auto}
+.body-grid{flex-direction:column}
+.sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:6px}
+.side-item{flex:0 0 auto;margin:0}
+.channel-list{width:100%;border-left:none;border-top:1px solid var(--border)}
+.channel-list.collapsed{height:0;width:100%}
+.list-scroll{flex-direction:row;overflow-x:auto;padding:10px}
+.chan-item{flex:0 0 220px}
+.player-shell{max-height:none}
+#searchInput{width:120px}
 }
-#lista.oculta{opacity:0;visibility:hidden;pointer-events:none}
-#lista .head{padding:12px 16px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gris);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #16161c}
-#lista .head .cerrar{background:none;border:none;color:var(--gris);cursor:pointer;font-size:18px;padding:0 4px}
-#lista .head .cerrar:hover{color:#fff}
-#scroll{flex:1;overflow-y:auto;padding:4px 0}
-#scroll::-webkit-scrollbar{width:5px}#scroll::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
-
-.sec{
-  padding:10px 16px 6px;font-size:10px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;
-  color:var(--morado);border-top:1px solid #1a1a22;margin-top:6px;
-  display:flex;align-items:center;gap:8px;
-}
-.sec::after{content:'';flex:1;height:1px;background:#1a1a22}
-.sec .rango{font-family:monospace;font-size:9px;color:#555;margin-left:auto}
-
-.ch{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;letter-spacing:.4px;border-left:3px solid transparent;transition:.12s}
-.ch:hover{background:rgba(255,255,255,.04)}
-.ch.sel{background:rgba(168,85,247,.22);border-left-color:var(--morado)}
-.ch .n{color:var(--gris);min-width:34px;font-weight:700;font-family:monospace;font-size:12px}
-.ch.sel .n{color:var(--morado)}
-.ch .sep{color:#333}
-.ch .nom{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ch.play .nom::after{content:' ▶';color:var(--morado);font-size:10px}
-
-.ev{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:12px;border-left:3px solid transparent;transition:.12s;background:rgba(168,85,247,.04)}
-.ev:hover{background:rgba(168,85,247,.12)}
-.ev.sel{background:rgba(168,85,247,.25);border-left-color:var(--morado)}
-.ev .ico{font-size:14px}
-.ev .info{flex:1;min-width:0}
-.ev .nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ev .meta{font-size:10px;color:var(--gris);margin-top:1px}
-.ev .badge{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.5px}
-.ev .badge.vivo{background:#ef4444;color:#fff}
-.ev .badge.prox{background:#06b6d4;color:#000}
-
-.vacio{padding:30px;text-align:center;color:#444;font-size:13px}
-
-#logoCanal{position:fixed;top:60px;right:90px;z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);padding:6px 14px;border-radius:8px;font-weight:800;font-size:20px;letter-spacing:1px}
-#logoCanal img{height:30px}
-#catChip{position:fixed;top:60px;right:14px;z-index:10;background:var(--morado);color:#fff;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600}
-
-#barra{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:16px 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;background:linear-gradient(transparent,rgba(0,0,0,.85) 30%,#000)}
-#barra .izq{display:flex;align-items:center;gap:16px}
-#barra .lbox{width:64px;height:48px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-#barra .lbox img{max-width:90%;max-height:90%;object-fit:contain}
-#barra .titulo{color:var(--morado);font-size:24px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
-#barra .epg{font-size:13px;color:var(--gris);line-height:1.7;margin-left:80px}
-#barra .epg b{color:var(--morado);font-weight:600}
-#barra .der{text-align:right;font-size:11px;color:var(--gris);line-height:1.9;letter-spacing:.5px}
-#barra .der .fila{display:flex;align-items:center;justify-content:flex-end;gap:6px}
-kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6px;color:#bbb;font-family:monospace;font-size:11px}
-#reloj{color:#666;font-family:monospace;font-size:12px;margin-top:2px}
-
-@media(max-width:760px){#lista{width:220px}#barra .epg{display:none}#logoCanal{right:80px;font-size:16px}}
 </style>
 </head>
 <body>
-
-<div id="player">
-  <iframe id="frame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-  <div id="empty"><span>📡</span>Selecciona un canal</div>
+<!-- ================= TOPBAR ================= -->
+<header class="topbar">
+<div class="topbar-left">
+<button class="ghost-btn" id="btnVolver">← Volver</button>
+<button class="ghost-btn" id="btnTopHistorial">🕐 Historial</button>
 </div>
-
-<div id="topbar">
-  <div class="nav-btns">
-    <button id="btnInicio">🏠 Inicio</button>
-    <button id="btnVolver">← Volver</button>
-  </div>
-  <div class="user-info">
-    <span class="user-tag" id="userTag">USUARIO</span>
-    <span class="clock" id="clockTop">--:--</span>
-  </div>
+<div class="topbar-center">
+<span class="brand">NUBARA<b>PLAY</b></span>
+<span class="user-tag" id="userInfo">USUARIO</span>
+<span class="status-dot" id="statusCat">Catálogo actualizado</span>
 </div>
+<div class="topbar-right">
+<input type="text" id="searchInput" placeholder="Buscar canal..." class="hidden">
+<button class="icon-btn" id="btnSearch">🔍</button>
+<div class="sort-wrap">
+<button class="icon-btn" id="btnSort">⏳</button>
+<div class="sort-menu" id="sortMenu">
+<button data-sort="nombre" class="active">A → Z</button>
+<button data-sort="nombreDesc">Z → A</button>
+<button data-sort="visitas">Más vistos</button>
+</div>
+</div>
+<button class="icon-btn" id="btnUser">👤</button>
+<span>📶</span>
+<span class="clock" id="clock">--:--</span>
+</div>
+</header>
 
-<aside id="lista">
-  <div class="head">
-    <span>📺 Canales y Agenda</span>
-    <button class="cerrar" id="btnCerrarLista" title="Cerrar (L)">✕</button>
-  </div>
-  <div id="scroll"></div>
+<div class="body-grid">
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar">
+<button class="side-item active" data-view="tv"><span class="ico">📺</span>TV</button>
+<button class="side-item" data-view="destacados"><span class="ico">👍</span>Destacados</button>
+<button class="side-item" data-view="agenda"><span class="ico">⚽</span>Agenda</button>
+<a class="side-item" href="genero.html"><span class="ico">🎬</span>Películas</a>
+<button class="side-item" data-view="historial"><span class="ico">🕐</span>Historial</button>
+<button class="side-item danger" id="btnSalir" style="margin-top:auto"><span class="ico">⏻</span>Salir</button>
 </aside>
 
-<div id="logoCanal" style="display:none"></div>
-<div id="catChip">TV</div>
+<!-- ================= MAIN ================= -->
+<main class="main-area">
+<button id="btnShowList" title="Mostrar canales">▶</button>
 
-<footer id="barra">
-  <div class="izq">
-    <div class="lbox" id="lbox"></div>
-    <div>
-      <div class="titulo" id="titulo">-- | SIN SEÑAL</div>
-      <div class="epg">
-        <div><b>Ahora:</b> <span id="ahora">No hay información disponible</span></div>
-        <div><b>Siguiente:</b> <span id="siguiente">No hay información disponible</span></div>
-      </div>
-    </div>
-  </div>
-  <div class="der">
-    <div class="fila"><kbd>↑</kbd><kbd>↓</kbd> Navegar</div>
-    <div class="fila"><kbd>Enter</kbd> Reproducir</div>
-    <div class="fila"><kbd>L</kbd> Lista · <kbd>F</kbd> Favorito</div>
-    <div class="fila"><kbd>I</kbd> Inicio · <kbd>Esc</kbd> Fullscreen</div>
-    <div id="reloj">--:-- | --/--/----</div>
-  </div>
-</footer>
+<!-- Vista Reproductor -->
+<section id="viewPlayer" style="display:flex;flex-direction:column;gap:14px;">
+<div class="player-shell" id="playerShell">
+<div class="player-zoom" id="playerZoom"><iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe></div>
+<div class="multi-grid g2 hidden" id="multiGrid"></div>
+<div class="player-empty" id="playerEmpty"><span class="big">📡</span>Selecciona un canal de la lista para reproducir</div>
+<div class="player-title"><span id="playerTitleText"></span><span class="fs" id="btnFsInline" title="Pantalla completa">⛶</span></div>
+</div>
+<div class="controls">
+<button class="ctrl-btn" id="btnPrev">⏮ Anterior</button>
+<button class="ctrl-btn" id="btnNext">⏭ Siguiente</button>
+<button class="ctrl-btn" id="btnMute">🔊</button>
+<div class="zoom-group"><button id="btnZoomOut">−</button><span id="zoomVal">100%</span><button id="btnZoomIn">+</button></div>
+<button class="ctrl-btn" id="btnFav">☆ Favorito</button>
+<button class="ctrl-btn" id="btnMulti">🔲 Multi</button>
+<button class="ctrl-btn" id="btnFullscreen">⛶ Pantalla completa</button>
+</div>
+<div class="chips" id="chips"></div>
+</section>
+
+<!-- Vista Agenda -->
+<section id="viewAgenda" class="hidden">
+<h2 style="font-size:20px;margin-bottom:16px">📅 Agenda Deportiva</h2>
+<div class="agenda-grid" id="agendaContainer"><div class="list-empty">Cargando agenda...</div></div>
+</section>
+</main>
+
+<!-- ================= LISTA DERECHA ================= -->
+<aside class="channel-list" id="channelList">
+<div class="list-head">
+<span class="list-title" id="listTitle">Canales</span>
+<button class="list-toggle" id="btnHideList" title="Ocultar lista">◀</button>
+</div>
+<button class="list-nav" id="btnScrollUp">▲</button>
+<div class="list-scroll" id="listScroll"></div>
+<button class="list-nav" id="btnScrollDown">▼</button>
+</aside>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 
-if(!localStorage.getItem('nubaraPlayUser')){window.location.href='index.html'}
-else{$('userTag').textContent=JSON.parse(localStorage.getItem('nubaraPlayUser')).tipo==='demo'?'DEMO':'PREMIUM'}
+/* ---- Auth ---- */
+const savedUser=localStorage.getItem('nubaraPlayUser');
+if(!savedUser){window.location.href='index.html'}
+else{$('userInfo').textContent=JSON.parse(savedUser).tipo==='demo'?'DEMO':'PREMIUM'}
+$('btnSalir').onclick=()=>{localStorage.removeItem('nubaraPlayUser');localStorage.removeItem('nubaraPlayUserExpiry');location.href='index.html'};
+$('btnVolver').onclick=()=>history.back();
 
+/* ---- Firebase ---- */
 const firebaseConfig={apiKey:"AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",authDomain:"nubaraplay.firebaseapp.com",projectId:"nubaraplay",storageBucket:"nubaraplay.firebasestorage.app",messagingSenderId:"873822057409",appId:"1:873822057409:web:f854a974f457eedd0c7540"};
 try{firebase.initializeApp(firebaseConfig)}catch(e){}
 const db=firebase.firestore();
 
-/* ============================================================
-   RANGOS POR CATEGORÍA (100 lugares cada una)
-   ============================================================ */
-const RANGOS = {
-  'Cine':            {inicio: 1,   fin: 100},
-  'Deportes':        {inicio: 101, fin: 200},
-  'Infantil':        {inicio: 201, fin: 300},
-  'Noticias':        {inicio: 301, fin: 400},
-  'Entretenimiento': {inicio: 401, fin: 500},
-  'Música':          {inicio: 501, fin: 600},
-  'Cultura':         {inicio: 601, fin: 700},
-  'Religión':        {inicio: 701, fin: 800},
-  'Variedades':      {inicio: 801, fin: 900},
-  'Series':          {inicio: 901, fin: 1000},
-};
-const RANGO_DEFAULT = {inicio: 1001, fin: 9999};
+/* ---- Estado ---- */
+let canales=[],agendaEvents=[];
+let currentView='tv',currentCat='Todos',searchQuery='',sortBy='nombre';
+let zoom=100,muted=false,playingId=null;
+let multiMode=1,slots=[],activeSlot=0; // multi: 1|2|4
 
-function formatoNum(n){return String(n).padStart(3,'0')}
+const getFavs=()=>JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');
+const getHist=()=>JSON.parse(localStorage.getItem('nubaraPlayHistorial')||'[]');
 
-let canales=[], eventos=[], listaVisible=true, sel=0, playingId=null;
-let listaUnificada=[];
+/* ---- Reloj 12h AM/PM ---- */
+function tickClock(){const d=new Date();let h=d.getHours();const m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM';h=h%12||12;$('clock').textContent=h+':'+m+' '+ap}
+setInterval(tickClock,1000);tickClock();
 
-function reloj(){
-  const d=new Date();
-  const hh=String(d.getHours()).padStart(2,'0');
-  const mm=String(d.getMinutes()).padStart(2,'0');
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mo=String(d.getMonth()+1).padStart(2,'0');
-  $('reloj').textContent=`${hh}:${mm} | ${dd}/${mo}/${d.getFullYear()}`;
-  $('clockTop').textContent=`${hh}:${mm}`;
-}
-setInterval(reloj,1000);reloj();
-
+/* ---- Datos en tiempo real ---- */
 db.collection('canales').onSnapshot(snap=>{
-  canales=[];
-  snap.forEach(doc=>canales.push({id:doc.id,...doc.data()}));
-  construirLista();
-},err=>console.error('Firebase:',err));
+canales=[];snap.forEach(doc=>{const c=doc.data();if(c.categoria==='Peliculas')return;canales.push({id:doc.id,...c})});
+const d=new Date();$('statusCat').textContent='Catálogo actualizado '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+renderChips();renderList();
+},err=>console.error('Error canales:',err));
 
-db.collection('agenda').onSnapshot(snap=>{
-  eventos=[];
-  snap.forEach(doc=>eventos.push({id:doc.id,...doc.data()}));
-  construirLista();
-},err=>console.error('Error agenda:',err));
+db.collection('agenda').onSnapshot(snap=>{agendaEvents=[];snap.forEach(doc=>agendaEvents.push({id:doc.id,...doc.data()}));renderAgenda()},err=>console.error('Error agenda:',err));
 
-function asignarNumerosPorCategoria(){
-  const grupos={};
-  canales.forEach(c=>{
-    const cat=c.categoria||'Otros';
-    if(!grupos[cat])grupos[cat]=[];
-    grupos[cat].push(c);
-  });
-
-  Object.keys(grupos).forEach(cat=>{
-    const rango=RANGOS[cat]||RANGO_DEFAULT;
-    const lista=grupos[cat];
-    lista.sort((a,b)=>{
-      if(a.numero&&b.numero)return a.numero-b.numero;
-      if(a.numero)return -1;
-      if(b.numero)return 1;
-      return String(a.nombre).localeCompare(String(b.nombre));
-    });
-
-    const ocupados=new Set();
-    lista.forEach(c=>{if(c.numero&&c.numero>=rango.inicio&&c.numero<=rango.fin)ocupados.add(c.numero)});
-
-    let siguiente=rango.inicio;
-    lista.forEach(c=>{
-      if(!c.numero||c.numero<rango.inicio||c.numero>rango.fin){
-        while(ocupados.has(siguiente)&&siguiente<=rango.fin)siguiente++;
-        if(siguiente>rango.fin){
-          c._numDisplay='---';
-        }else{
-          c._numDisplay=formatoNum(siguiente);
-          ocupados.add(siguiente);
-          siguiente++;
-        }
-      }else{
-        c._numDisplay=formatoNum(c.numero);
-      }
-    });
-  });
+/* ---- Chips categoría ---- */
+function renderChips(){
+const cats=['Todos',...[...new Set(canales.map(c=>c.categoria).filter(Boolean))].sort()];
+const box=$('chips');box.innerHTML='';
+const lbl=document.createElement('span');lbl.className='chip-label';lbl.textContent='Categorías:';box.appendChild(lbl);
+cats.forEach(cat=>{const b=document.createElement('button');b.className='chip'+(cat===currentCat?' active':'');b.textContent=cat;
+b.onclick=()=>{currentCat=cat;if(currentView!=='tv')setView('tv');renderChips();renderList()};box.appendChild(b)});
 }
 
-function construirLista(){
-  listaUnificada=[];
-  asignarNumerosPorCategoria();
-
-  const catsOrdenadas=Object.keys(RANGOS).filter(cat=>canales.some(c=>c.categoria===cat));
-  const catsExtra=[...new Set(canales.map(c=>c.categoria).filter(Boolean))].filter(c=>!RANGOS[c]).sort();
-  const todasCats=[...catsOrdenadas,...catsExtra];
-
-  todasCats.forEach(cat=>{
-    const rango=RANGOS[cat]||RANGO_DEFAULT;
-    const canalesCat=canales.filter(c=>c.categoria===cat)
-      .sort((a,b)=>{
-        const na=parseInt(a._numDisplay)||9999;
-        const nb=parseInt(b._numDisplay)||9999;
-        return na-nb;
-      });
-    if(!canalesCat.length)return;
-    listaUnificada.push({tipo:'seccion', nombre:cat, rango:`${formatoNum(rango.inicio)}-${formatoNum(rango.fin)}`});
-    canalesCat.forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
-  });
-
-  if(eventos.length){
-    listaUnificada.push({tipo:'seccion', nombre:'⚽ Agenda Deportiva', rango:''});
-    const orden={'HOY':0,'MAÑANA':1,'LUNES':2,'MARTES':3,'MIÉRCOLES':4,'JUEVES':5,'VIERNES':6,'SÁBADO':7,'DOMINGO':8};
-    eventos.sort((a,b)=>(orden[(a.dia||'').toUpperCase()]??99)-(orden[(b.dia||'').toUpperCase()]??99)||(a.horaInicio||'').localeCompare(b.horaInicio||''));
-    eventos.forEach(ev=>listaUnificada.push({tipo:'evento', data:ev}));
-  }
-
-  const nav=getNavegables();
-  if(sel>=nav.length)sel=0;
-  render();
+/* ---- Lista según vista/filtros/orden ---- */
+function getList(){
+let list;
+if(currentView==='destacados')list=canales.filter(c=>getFavs().includes(c.id));
+else if(currentView==='historial'){const h=getHist();list=h.map(x=>canales.find(c=>c.id===x.id)).filter(Boolean)}
+else list=canales.filter(c=>currentCat==='Todos'||c.categoria===currentCat);
+if(searchQuery)list=list.filter(c=>(c.nombre||'').toLowerCase().includes(searchQuery));
+if(sortBy==='nombre')list.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+if(sortBy==='nombreDesc')list.sort((a,b)=>(b.nombre||'').localeCompare(a.nombre||''));
+if(sortBy==='visitas')list.sort((a,b)=>(b.visitas||0)-(a.visitas||0));
+return list;
 }
 
-function getNavegables(){return listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento')}
-
-function render(){
-  const box=$('scroll');box.innerHTML='';
-  if(!listaUnificada.length){box.innerHTML='<div class="vacio">Cargando...</div>';return}
-  const nav=getNavegables();
-  const selItem=nav[sel];
-
-  listaUnificada.forEach(item=>{
-    if(item.tipo==='seccion'){
-      const s=document.createElement('div');
-      s.className='sec';
-      s.innerHTML=`<span>${item.nombre}</span>${item.rango?`<span class="rango">${item.rango}</span>`:''}`;
-      box.appendChild(s);
-    }
-    else if(item.tipo==='canal'){
-      const c=item.data;
-      const esSel=selItem&&selItem.tipo==='canal'&&selItem.data.id===c.id;
-      const d=document.createElement('div');
-      d.className='ch'+(esSel?' sel':'')+(c.id===playingId?' play':'');
-      d.innerHTML=`<span class="n">${c._numDisplay||'---'}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
-      d.onclick=()=>{
-        const idx=nav.findIndex(n=>n.tipo==='canal'&&n.data.id===c.id);
-        if(idx>=0){sel=idx;playItem(nav[sel])}
-      };
-      box.appendChild(d);
-    }
-    else if(item.tipo==='evento'){
-      const ev=item.data;
-      const ahora=new Date();
-      const hhmm=String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
-      let badge='';
-      if(ev.horaInicio&&ev.horaFin){
-        if(hhmm>=ev.horaInicio&&hhmm<=ev.horaFin)badge='<span class="badge vivo">EN VIVO</span>';
-        else if(hhmm<ev.horaInicio)badge='<span class="badge prox">PRÓXIMO</span>';
-      }
-      const esSel=selItem&&selItem.tipo==='evento'&&selItem.data.id===ev.id;
-      const d=document.createElement('div');
-      d.className='ev'+(esSel?' sel':'');
-      d.innerHTML=`
-        <span class="ico">⚽</span>
-        <div class="info">
-          <div class="nom">${ev.nombre||'Evento'} ${badge}</div>
-          <div class="meta">${ev.dia||''} ${ev.horaInicio||''}-${ev.horaFin||''} · ${ev.canal||''}</div>
-        </div>
-      `;
-      d.onclick=()=>{
-        const idx=nav.findIndex(n=>n.tipo==='evento'&&n.data.id===ev.id);
-        if(idx>=0){sel=idx;playItem(nav[sel])}
-      };
-      box.appendChild(d);
-    }
-  });
-
-  const els=box.querySelectorAll('.ch.sel, .ev.sel');
-  if(els[0])els[0].scrollIntoView({block:'nearest',behavior:'smooth'});
+function renderList(){
+const box=$('listScroll');box.innerHTML='';
+$('listTitle').textContent=currentView==='destacados'?'Destacados':currentView==='historial'?'Historial':'Canales';
+const list=getList();
+if(!list.length){box.innerHTML='<div class="list-empty">No hay canales para mostrar</div>';return}
+list.forEach(c=>{
+const item=document.createElement('div');
+item.className='chan-item'+(multiMode===1&&c.id===playingId?' active':'');
+const logo=document.createElement('div');logo.className='chan-logo';
+const img=document.createElement('img');img.loading='lazy';img.src=c.logo||'';
+img.onerror=()=>{img.src='https://via.placeholder.com/120x90/1d1d22/808080?text=TV'};logo.appendChild(img);
+const name=document.createElement('span');name.className='chan-name';name.textContent=c.nombre;
+item.appendChild(logo);item.appendChild(name);
+item.onclick=()=>{multiMode===1?play(c):assignToSlot(c)};
+box.appendChild(item)});
 }
 
-function playItem(item){
-  if(!item)return;
-  if(item.tipo==='canal'){
-    const c=item.data;
-    playingId=c.id;
-    $('empty').style.display='none';
-    $('frame').src=c.url||'';
-    $('titulo').innerHTML=`<span style="color:var(--morado)">${c._numDisplay||''}</span> | ${c.nombre||'SIN SEÑAL'}`;
-    $('lbox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
-    $('logoCanal').style.display='flex';
-    $('logoCanal').innerHTML=(c.logo?`<img src="${c.logo}">`:'')+`<span>${c.nombre||''}</span>`;
-    $('ahora').textContent=c.ahora||'No hay información disponible';
-    $('siguiente').textContent=c.siguiente||'No hay información disponible';
-    $('catChip').textContent=c.categoria||'TV';
-  }else if(item.tipo==='evento'){
-    const ev=item.data;
-    playingId='agenda-'+ev.id;
-    if(ev.url){
-      $('empty').style.display='none';
-      $('frame').src=ev.url;
-      $('titulo').innerHTML=`⚽ ${ev.nombre||'EVENTO'}`;
-      $('lbox').innerHTML='';
-      $('logoCanal').style.display='flex';
-      $('logoCanal').innerHTML=`<span>⚽ ${ev.nombre||''}</span>`;
-      $('ahora').textContent=`${ev.dia||''} ${ev.horaInicio||''}-${ev.horaFin||''}`;
-      $('siguiente').textContent=ev.canal||'';
-      $('catChip').textContent='AGENDA';
-    }
-  }
-  render();
+/* ---- Reproducir (single) ---- */
+function play(canal){
+playingId=canal.id;
+$('playerFrame').src=canal.url||'';
+$('playerTitleText').textContent=canal.nombre||'';
+$('playerEmpty').classList.add('hidden');
+let h=getHist().filter(x=>x.id!==canal.id);
+h.unshift({id:canal.id,nombre:canal.nombre,ts:Date.now()});
+localStorage.setItem('nubaraPlayHistorial',JSON.stringify(h.slice(0,20)));
+if(canales.some(c=>c.id===canal.id)){
+db.collection('canales').doc(canal.id).update({visitas:(canal.visitas||0)+1}).catch(()=>{});
+const usuario=JSON.parse(localStorage.getItem('nubaraPlayUser')||'{}');
+db.collection('visualizaciones').add({usuarioId:usuario.id||'anonimo',usuarioNombre:usuario.nombre||'Anonimo',tipo:'canal',contenidoId:canal.id,nombre:canal.nombre,categoria:canal.categoria||'General',fecha:new Date()}).catch(()=>{});
+}
+updateFavBtn();renderList();
+const act=$('listScroll').querySelector('.chan-item.active');
+if(act)act.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 
-// ============================================================
-// SALIR A INICIO
-// ============================================================
-function irAInicio(){
-  // Si tu página de inicio se llama diferente, cambia 'index.html' aquí
-  window.location.href='index.html';
+function navigate(delta){
+if(multiMode!==1)return;
+const list=getList();if(!list.length)return;
+let idx=list.findIndex(c=>c.id===playingId);
+idx=(idx+delta+list.length)%list.length;
+play(list[idx]);
 }
 
-$('btnInicio').onclick=irAInicio;
-$('btnVolver').onclick=()=>history.back();
-$('btnCerrarLista').onclick=()=>{listaVisible=false;$('lista').classList.add('oculta')};
+/* ---- Multi-pantalla ---- */
+function setMulti(n){
+multiMode=n;slots=new Array(n).fill(null);activeSlot=0;
+$('btnMulti').classList.toggle('active-multi',n>1);
+$('btnMulti').innerHTML=n===1?'🔲 Multi':n===2?'🔲 2 pantallas':'🔲 4 pantallas';
+if(n===1){$('multiGrid').classList.add('hidden');$('playerZoom').classList.remove('hidden')}
+else{
+$('playerZoom').classList.add('hidden');$('playerEmpty').classList.add('hidden');
+const g=$('multiGrid');g.classList.remove('hidden');g.className='multi-grid '+(n===2?'g2':'g4');
+g.innerHTML='';
+for(let i=0;i<n;i++){
+const cell=document.createElement('div');cell.className='m-cell'+(i===activeSlot?' active-slot':'');cell.dataset.i=i;
+cell.innerHTML='<div class="m-empty">Celda '+(i+1)+' — elige un canal</div><span class="m-name"></span><button class="m-close">✕</button>';
+cell.querySelector('.m-close').onclick=e=>{e.stopPropagation();clearSlot(i)};
+cell.onclick=()=>{activeSlot=i;refreshSlots()};
+g.appendChild(cell)}
+renderList()}
+}
+function assignToSlot(c){
+let idx=slots.findIndex(s=>!s);if(idx===-1)idx=activeSlot;
+slots[idx]={id:c.id,nombre:c.nombre,url:c.url};activeSlot=(idx+1)%multiMode;
+refreshSlots();renderList();
+}
+function clearSlot(i){slots[i]=null;refreshSlots()}
+function refreshSlots(){
+if(multiMode===1)return;
+const cells=$('multiGrid').children;
+for(let i=0;i<multiMode;i++){
+const cell=cells[i];const s=slots[i];
+cell.classList.toggle('active-slot',i===activeSlot);
+let f=cell.querySelector('iframe');
+if(s){
+if(!f){f=document.createElement('iframe');f.allow='autoplay; encrypted-media';f.allowFullscreen=true;cell.prepend(f)}
+f.src=s.url;cell.querySelector('.m-name').textContent=s.nombre;
+cell.querySelector('.m-empty').style.display='none';
+}else{
+if(f)f.remove();cell.querySelector('.m-name').textContent='';
+cell.querySelector('.m-empty').style.display='flex'}
+}
+}
+$('btnMulti').onclick=()=>{setMulti(multiMode===1?2:multiMode===2?4:1)};
 
+/* ---- Controles ---- */
+$('btnPrev').onclick=()=>navigate(-1);
+$('btnNext').onclick=()=>navigate(1);
+$('btnMute').onclick=()=>{muted=!muted;$('btnMute').textContent=muted?'🔇':'🔊'};
+function setZoom(v){zoom=Math.max(50,Math.min(200,v));$('playerZoom').style.transform='scale('+zoom/100+')';$('zoomVal').textContent=zoom+'%'}
+$('btnZoomIn').onclick=()=>setZoom(zoom+10);
+$('btnZoomOut').onclick=()=>setZoom(zoom-10);
+$('btnFullscreen').onclick=$('btnFsInline').onclick=()=>{
+const el=$('playerShell');
+if(!document.fullscreenElement)el.requestFullscreen().catch(()=>{});else document.exitFullscreen()};
+function updateFavBtn(){
+const isFav=playingId&&getFavs().includes(playingId);
+$('btnFav').textContent=isFav?'★ Favorito':'☆ Favorito';
+$('btnFav').classList.toggle('active-fav',!!isFav)}
+$('btnFav').onclick=()=>{
+if(!playingId)return;
+let f=getFavs();const i=f.indexOf(playingId);
+if(i>-1)f.splice(i,1);else f.push(playingId);
+localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));
+updateFavBtn();renderList()};
+
+/* ---- Búsqueda + orden ---- */
+$('btnSearch').onclick=()=>{$('searchInput').classList.toggle('hidden');$('searchInput').focus()};
+$('searchInput').oninput=e=>{searchQuery=e.target.value.toLowerCase();renderList()};
+$('btnSort').onclick=e=>{e.stopPropagation();$('sortMenu').classList.toggle('open')};
+document.addEventListener('click',()=>$('sortMenu').classList.remove('open'));
+$('sortMenu').querySelectorAll('button').forEach(b=>b.onclick=e=>{
+e.stopPropagation();sortBy=b.dataset.sort;
+$('sortMenu').querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+b.classList.add('active');$('sortMenu').classList.remove('open');renderList()});
+
+/* ---- Lista ocultable ---- */
+function setListVisible(v){
+$('channelList').classList.toggle('collapsed',!v);
+$('btnShowList').style.display=v?'none':'flex'}
+$('btnHideList').onclick=()=>setListVisible(false);
+$('btnShowList').onclick=()=>setListVisible(true);
+
+/* ---- Vistas sidebar ---- */
+function setView(v){
+currentView=v;
+document.querySelectorAll('.side-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+$('viewPlayer').classList.toggle('hidden',v==='agenda');
+$('viewAgenda').classList.toggle('hidden',v!=='agenda');
+$('channelList').classList.toggle('hidden',v==='agenda');
+if(v==='agenda')setListVisible(true);
+renderList()}
+document.querySelectorAll('.side-item[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+$('btnTopHistorial').onclick=()=>setView('historial');
+
+/* ---- Scroll lista ---- */
+$('btnScrollUp').onclick=()=>$('listScroll').scrollBy({top:-240,behavior:'smooth'});
+$('btnScrollDown').onclick=()=>$('listScroll').scrollBy({top:240,behavior:'smooth'});
+
+/* ---- Teclado (mando Xuper) ---- */
 document.addEventListener('keydown',e=>{
-  const nav=getNavegables();
-  switch(e.key){
-    case 'ArrowUp':
-      e.preventDefault();
-      if(nav.length){sel=(sel-1+nav.length)%nav.length;playItem(nav[sel])}
-      break;
-    case 'ArrowDown':
-      e.preventDefault();
-      if(nav.length){sel=(sel+1)%nav.length;playItem(nav[sel])}
-      break;
-    case 'ArrowLeft':
-      e.preventDefault();
-      if(nav.length){sel=(sel-1+nav.length)%nav.length;playItem(nav[sel])}
-      break;
-    case 'ArrowRight':
-      e.preventDefault();
-      if(nav.length){sel=(sel+1)%nav.length;playItem(nav[sel])}
-      break;
-    case 'Enter':
-      e.preventDefault();
-      if(nav.length)playItem(nav[sel]);
-      break;
-    case 'l':case 'L':
-      e.preventDefault();
-      listaVisible=!listaVisible;
-      $('lista').classList.toggle('oculta',!listaVisible);
-      break;
-    case 'f':case 'F':
-      e.preventDefault();
-      if(nav[sel]&&nav[sel].tipo==='canal'){
-        let f=JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');
-        const id=nav[sel].data.id;
-        f.includes(id)?f=f.filter(x=>x!==id):f.push(id);
-        localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));
-      }
-      break;
-    case 'i':case 'I':case 'Home':
-      e.preventDefault();
-      irAInicio();
-      break;
-    case 'Escape':
-      e.preventDefault();
-      if(document.fullscreenElement)document.exitFullscreen();
-      else $('player').requestFullscreen().catch(()=>{});
-      break;
-  }
+if(e.target.tagName==='INPUT')return;
+const list=getList();
+if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+if(multiMode!==1||currentView==='agenda')return;
+let idx=list.findIndex(c=>c.id===playingId);
+idx=e.key==='ArrowDown'?Math.min(idx+1,list.length-1):Math.max(idx-1,0);
+if(list[idx])play(list[idx]);e.preventDefault()}
+if(e.key==='ArrowRight')navigate(1);
+if(e.key==='ArrowLeft')navigate(-1);
+if(e.key==='f'||e.key==='F')$('btnFullscreen').click();
+if(e.key==='m'||e.key==='M')$('btnMute').click();
 });
 
-construirLista();
+/* ---- Agenda ---- */
+function eventoYaTermino(ev){
+if(!ev.horaFin||(ev.dia||'').toUpperCase()!=='HOY')return false;
+const d=new Date();const now=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+return now>ev.horaFin}
+function getEstadoEvento(ev){
+if((ev.dia||'').toUpperCase()!=='HOY')return{text:'Próximo',clase:'badge-proximo'};
+const d=new Date();const now=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+if(now<ev.horaInicio)return{text:'Próximo',clase:'badge-proximo'};
+if(now>=ev.horaInicio&&now<=ev.horaFin)return{text:'🔴 EN VIVO',clase:'badge-en-vivo'};
+return null}
+function renderAgenda(){
+const box=$('agendaContainer');
+const eventos=agendaEvents.filter(ev=>!eventoYaTermino(ev));
+if(!eventos.length){box.innerHTML='<div class="list-empty">No hay eventos activos</div>';return}
+const orden={'HOY':0,'MAÑANA':1,'LUNES':2,'MARTES':3,'MIÉRCOLES':4,'JUEVES':5,'VIERNES':6,'SÁBADO':7,'DOMINGO':8};
+eventos.sort((a,b)=>(orden[(a.dia||'').toUpperCase()]??99)-(orden[(b.dia||'').toUpperCase()]??99)||(a.horaInicio||'').localeCompare(b.horaInicio||''));
+box.innerHTML='';
+eventos.forEach(ev=>{
+const estado=getEstadoEvento(ev);
+const card=document.createElement('div');
+card.className='agenda-card'+(estado&&estado.clase==='badge-en-vivo'?' en-vivo':'');
+if(estado&&estado.clase){const badge=document.createElement('div');badge.className='agenda-badge '+estado.clase;badge.textContent=estado.texto;card.appendChild(badge)}
+const t=document.createElement('div');t.className='agenda-time';t.textContent='🕒 '+(ev.dia||'')+' - '+(ev.horaInicio||'')+' a '+(ev.horaFin||'');
+const m=document.createElement('div');m.className='agenda-match';m.textContent=ev.nombre||'';
+const c=document.createElement('div');c.className='agenda-channel';c.textContent='📡 '+(ev.canal||'');
+card.append(t,m,c);
+card.onclick=()=>{setView('tv');if(multiMode!==1)setMulti(1);play({id:'agenda-'+ev.id,nombre:ev.nombre,url:ev.url})};
+box.appendChild(card)})}
+setInterval(renderAgenda,30000);
 </script>
 </body>
 </html>
