@@ -6,7 +6,7 @@
     <title>Canales en Vivo - NubaraPlay</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
     
-    <!-- 1. AGREGAMOS LA LIBRERÍA HLS.JS PARA REPRODUCIR .M3U8 -->
+    <!-- LIBRERÍA HLS.JS PARA REPRODUCIR .M3U8 -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
@@ -54,7 +54,7 @@
         .player-shell { position: relative; background: #000; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; max-height: 64vh; margin: 0 auto; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
         .player-zoom { position: absolute; inset: 0; transition: transform .2s ease; }
         
-        /* 2. ESTILOS PARA EL NUEVO REPRODUCTOR DE VIDEO */
+        /* ESTILOS PARA EL REPRODUCTOR DUAL */
         #videoPlayer { width: 100%; height: 100%; background: #000; display: none; }
         #playerFrame { width: 100%; height: 100%; border: none; display: none; }
 
@@ -162,7 +162,6 @@
             <section id="viewPlayer" style="display:flex; flex-direction:column; gap:14px;">
                 <div class="player-shell" id="playerShell">
                     <div class="player-zoom" id="playerZoom">
-                        <!-- 3. REEMPLAZAMOS EL IFRAME ÚNICO POR UN SISTEMA DUAL -->
                         <video id="videoPlayer" controls autoplay playsinline></video>
                         <iframe id="playerFrame" allowfullscreen allow="autoplay; encrypted-media"></iframe>
                     </div>
@@ -223,7 +222,7 @@
         let canales = [], agendaEvents = [];
         let currentView = 'tv', currentCat = 'Todos', searchQuery = '';
         let zoom = 100, muted = false, playingId = null;
-        let hls = null; // Variable para controlar la instancia de HLS.js
+        let hls = null; 
 
         const getFavs = () => JSON.parse(localStorage.getItem('nubaraPlayFavoritos') || '[]');
         const getHist = () => JSON.parse(localStorage.getItem('nubaraPlayHistorial') || '[]');
@@ -291,15 +290,28 @@
             });
         }
 
-        // ---- 4. REPRODUCTOR INTELIGENTE (M3U8 + PHP) ----
+        // ==========================================================
+        // ==== SOLUCIÓN CLAVE: PROXY + FALLBACK PARA HTTP/CORS ====
+        // ==========================================================
+        function proxify(url) {
+            if (!url) return '';
+            // Si es HTTP, lo pasamos por un proxy CORS público para evitar el bloqueo Mixed Content
+            if (url.startsWith('http://')) {
+                return 'https://corsproxy.io/?' + encodeURIComponent(url);
+            }
+            return url; // Si ya es HTTPS, va directo
+        }
+
         function play(canal) {
             playingId = canal.id;
             $('playerTitleText').textContent = canal.nombre || '';
             $('playerEmpty').classList.add('hidden');
-            $('viewPlayer').classList.remove('hidden'); $('viewAgenda').classList.add('hidden');
+            $('viewPlayer').classList.remove('hidden'); 
+            $('viewAgenda').classList.add('hidden');
             $('channelList').classList.remove('hidden');
 
-            const url = canal.url || '';
+            const rawUrl = canal.url || '';
+            const playUrl = proxify(rawUrl);
             const video = $('videoPlayer');
             const iframe = $('playerFrame');
 
@@ -309,34 +321,45 @@
             video.src = "";
             iframe.src = "";
 
-            // 2. Decidir qué motor de reproducción usar
-            if (url.includes('.m3u8')) {
-                // --- MODO .M3U8 (Usa HLS.js) ---
+            // 2. Decidir motor de reproducción
+            if (playUrl.includes('.m3u8') || playUrl.includes('corsproxy.io')) {
                 iframe.style.display = 'none';
                 video.style.display = 'block';
 
                 if (Hls.isSupported()) {
-                    hls = new Hls();
-                    hls.loadSource(url);
+                    hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+                    hls.loadSource(playUrl);
                     hls.attachMedia(video);
+                    
                     hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                        video.play().catch(e => console.log("Autoplay bloqueado por el navegador:", e));
+                        video.play().catch(e => console.log("Autoplay bloqueado:", e));
+                    });
+
+                    // 3. FALLBACK AUTOMÁTICO: Si el proxy o el servidor bloquean la petición
+                    hls.on(Hls.Events.ERROR, function (event, data) {
+                        if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            console.warn("⚠️ Stream bloqueado por CORS/Mixed Content. Activando fallback...");
+                            const confirmOpen = confirm(`⚠️ El navegador bloqueó este canal por seguridad (HTTP/CORS).\n\n¿Deseas abrirlo en una pestaña nueva donde sí funcionará?\n\nCanal: ${canal.nombre}`);
+                            if (confirmOpen) {
+                                window.open(rawUrl, '_blank');
+                            }
+                        }
                     });
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Soporte nativo para Safari (iOS/Mac)
-                    video.src = url;
+                    // Soporte nativo Safari
+                    video.src = playUrl;
                     video.addEventListener('loadedmetadata', function() { video.play(); });
                 }
             } else {
-                // --- MODO .PHP / EMBED (Usa Iframe de respaldo) ---
+                // Modo .php o embed tradicional
                 video.style.display = 'none';
                 iframe.style.display = 'block';
-                iframe.src = url;
+                iframe.src = playUrl;
             }
 
             // Historial
             let h = getHist().filter(x => x.id !== canal.id);
-            h.unshift({ id: canal.id, nombre: canal.nombre, logo: canal.logo, url: canal.url, ts: Date.now() });
+            h.unshift({ id: canal.id, nombre: canal.nombre, logo: canal.logo, url: rawUrl, ts: Date.now() });
             localStorage.setItem('nubaraPlayHistorial', JSON.stringify(h.slice(0, 20)));
 
             // Visitas
@@ -359,7 +382,7 @@
         $('btnPrev').onclick = () => navigate(-1);
         $('btnNext').onclick = () => navigate(1);
         
-        // 5. ARREGLADO: El botón de mute ahora sí silencia el video
+        // Botón Mute arreglado para que realmente silencie el video
         $('btnMute').onclick = () => { 
             muted = !muted; 
             $('videoPlayer').muted = muted; 
