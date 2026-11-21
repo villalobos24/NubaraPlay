@@ -6,206 +6,141 @@
 <title>NubaraPlay</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --negro:#000;
-  --panel:#0a0a0a;
-  --morado:#a855f7;
-  --morado-osc:#3b1a5e;
-  --texto:#e5e5e5;
-  --gris:#7a7a7a;
-}
-html,body{height:100%;overflow:hidden;background:var(--negro);color:var(--texto);font-family:'Segoe UI',Arial,sans-serif}
+:root{--morado:#a855f7;--texto:#e5e5e5;--gris:#888}
+html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-family:'Segoe UI',Arial,sans-serif}
 
-/* LAYOUT EXACTO: lista izquierda | (reproductor arriba + barra info abajo) derecha */
-.app{display:grid;grid-template-columns:340px 1fr;grid-template-rows:1fr auto;height:100vh;width:100vw}
+/* REPRODUCTOR = FONDO A PANTALLA COMPLETA */
+#player{position:fixed;inset:0;background:#000;z-index:1}
+#player iframe{width:100%;height:100%;border:none;display:block}
+#empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#333;font-size:15px;z-index:2}
+#empty span{font-size:46px;opacity:.5}
 
-/* ===== LISTA DE CANALES (izquierda, ocupa las 2 filas) ===== */
-.lista{
-  grid-row:1/3;
-  background:var(--panel);
-  border-right:1px solid #1a1a1a;
-  display:flex;flex-direction:column;
-  overflow:hidden;
+/* LISTA FLOTANTE (arriba-izquierda, fondo semi-transparente) */
+#lista{
+  position:fixed;top:0;left:0;width:290px;max-height:62vh;z-index:10;
+  background:rgba(8,8,12,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-right:1px solid #1c1c22;border-bottom:1px solid #1c1c22;border-bottom-right-radius:10px;
+  display:flex;flex-direction:column;transition:transform .25s;
 }
-.lista-head{padding:14px 18px;font-size:12px;letter-spacing:2px;color:var(--gris);text-transform:uppercase;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between}
-.lista-scroll{flex:1;overflow-y:auto;padding:6px 0}
-.lista-scroll::-webkit-scrollbar{width:5px}
-.lista-scroll::-webkit-scrollbar-thumb{background:#222}
-
-.ch{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 18px;cursor:pointer;
-  font-size:13px;letter-spacing:.5px;text-transform:uppercase;
-  color:var(--texto);transition:background .1s;
-  border-left:3px solid transparent;
-}
-.ch .num{color:var(--gris);min-width:26px;font-weight:700}
+#lista.oculta{transform:translateX(-100%)}
+#lista .head{padding:12px 16px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gris);display:flex;justify-content:space-between;border-bottom:1px solid #16161c}
+#scroll{flex:1;overflow-y:auto;padding:4px 0}
+#scroll::-webkit-scrollbar{width:5px}#scroll::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
+.ch{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;letter-spacing:.4px;border-left:3px solid transparent;transition:.12s}
+.ch:hover{background:rgba(255,255,255,.04)}
+.ch.sel{background:rgba(168,85,247,.22);border-left-color:var(--morado)}
+.ch .n{color:var(--gris);min-width:24px;font-weight:700}
+.ch.sel .n{color:var(--morado)}
 .ch .sep{color:#333}
 .ch .nom{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ch:hover{background:#111}
-.ch.sel{
-  background:var(--morado-osc);
-  border-left-color:var(--morado);
-  color:#fff;
-}
-.ch.sel .num{color:var(--morado)}
-.ch.playing .nom::after{content:' ▶';color:var(--morado);font-size:10px}
+.ch.play .nom::after{content:' ▶';color:var(--morado);font-size:10px}
+.vacio{padding:30px;text-align:center;color:#444;font-size:13px}
 
-/* ===== REPRODUCTOR (derecha arriba) ===== */
-.player{
-  position:relative;
-  background:#000;
-  overflow:hidden;
-  min-height:0;
-}
-.player iframe{width:100%;height:100%;border:none;display:block}
-.player .logo-canal{
-  position:absolute;top:18px;right:22px;
-  background:rgba(0,0,0,.6);border-radius:8px;
-  padding:8px 14px;display:flex;align-items:center;gap:8px;
-  font-weight:800;font-size:18px;letter-spacing:1px;
-  pointer-events:none;
-}
-.player .logo-canal img{height:34px;max-width:60px;object-fit:contain}
-.player .empty{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;color:#444;
-}
-.player .empty span{font-size:40px}
+/* LOGO CANAL (arriba-derecha) */
+#logoCanal{position:fixed;top:14px;right:90px;z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:8px;font-weight:800;font-size:20px;letter-spacing:1px}
+#logoCanal img{height:30px}
 
-/* ===== BARRA INFERIOR (derecha abajo) ===== */
-.info{
-  background:var(--panel);
-  border-top:1px solid #1a1a1a;
-  padding:14px 22px;
-  display:flex;align-items:center;gap:22px;
-  min-height:96px;
-}
-.info .logo-box{
-  width:70px;height:54px;background:#111;border-radius:6px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  overflow:hidden;
-}
-.info .logo-box img{max-width:90%;max-height:90%;object-fit:contain}
-.info .canal-titulo{
-  color:var(--morado);font-size:22px;font-weight:800;
-  letter-spacing:1px;text-transform:uppercase;
-  display:flex;align-items:baseline;gap:8px;
-}
-.info .canal-titulo .n{font-size:22px}
-.info .epg{flex:1;font-size:13px;color:var(--gris);line-height:1.7}
-.info .epg b{color:var(--morado);font-weight:600}
-.info .atajos{
-  text-align:right;font-size:11px;color:var(--gris);
-  letter-spacing:1px;line-height:1.8;flex-shrink:0;
-}
-.info .atajos .k{color:#999}
-.info .atajos kbd{
-  background:#1a1a1a;border:1px solid #2a2a2a;border-radius:3px;
-  padding:1px 5px;color:var(--morado);font-family:monospace;font-size:10px;
-}
-.info .reloj{color:var(--gris);font-family:monospace;font-size:12px;margin-top:4px}
+/* CHIP CATEGORÍA (arriba-derecha extremo) */
+#catChip{position:fixed;top:14px;right:14px;z-index:10;background:var(--morado);color:#fff;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600}
 
-/* Responsive: si la pantalla es muy chica, apila */
-@media(max-width:760px){
-  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
-  .lista{grid-row:auto;max-height:38vh;border-right:none;border-bottom:1px solid #1a1a1a}
-  .info{flex-wrap:wrap;min-height:auto}
-}
+/* BARRA INFERIOR (degradado, flotante) */
+#barra{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:16px 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;background:linear-gradient(transparent,rgba(0,0,0,.85) 30%,#000)}
+#barra .izq{display:flex;align-items:center;gap:16px}
+#barra .lbox{width:64px;height:48px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+#barra .lbox img{max-width:90%;max-height:90%;object-fit:contain}
+#barra .titulo{color:var(--morado);font-size:24px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+#barra .epg{font-size:13px;color:var(--gris);line-height:1.7;margin-left:80px}
+#barra .epg b{color:var(--morado);font-weight:600}
+#barra .der{text-align:right;font-size:11px;color:var(--gris);line-height:1.9;letter-spacing:.5px}
+#barra .der .fila{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6px;color:#bbb;font-family:monospace;font-size:11px}
+#reloj{color:#666;font-family:monospace;font-size:12px;margin-top:2px}
+
+@media(max-width:760px){#lista{width:220px}#barra .epg{display:none}#logoCanal{right:80px;font-size:16px}}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- LISTA IZQUIERDA -->
-  <aside class="lista">
-    <div class="lista-head"><span>Canales</span><span id="count">0</span></div>
-    <div class="lista-scroll" id="lista"></div>
-  </aside>
-
-  <!-- REPRODUCTOR -->
-  <section class="player" id="player">
-    <iframe id="frame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-    <div class="logo-canal" id="logoCanal" style="display:none"></div>
-    <div class="empty" id="empty"><span>📡</span>Selecciona un canal</div>
-  </section>
-
-  <!-- BARRA INFERIOR -->
-  <footer class="info">
-    <div class="logo-box" id="logoBox"></div>
-    <div class="canal-titulo" id="titulo">-- | SIN SEÑAL</div>
-    <div class="epg">
-      <div><b>Ahora:</b> <span id="ahora">No hay información disponible</span></div>
-      <div><b>Siguiente:</b> <span id="siguiente">No hay información disponible</span></div>
-    </div>
-    <div class="atajos">
-      <div><span class="kbd">↑</span> <span class="kbd">↓</span> Navegar &nbsp; <span class="k">Enter</span> Reproducir</div>
-      <div><span class="k">L</span> Lista &nbsp; <span class="k">F</span> Favorito &nbsp; <span class="k">Esc</span> Ocultar</div>
-      <div class="reloj" id="reloj">--:-- | --/--/----</div>
-    </div>
-  </footer>
-
+<div id="player">
+  <iframe id="frame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  <div id="empty"><span>📡</span>Selecciona un canal</div>
 </div>
+
+<aside id="lista">
+  <div class="head"><span>Canales</span><span id="count">0</span></div>
+  <div id="scroll"></div>
+</aside>
+
+<div id="logoCanal" style="display:none"></div>
+<div id="catChip">Todos</div>
+
+<footer id="barra">
+  <div class="izq">
+    <div class="lbox" id="lbox"></div>
+    <div>
+      <div class="titulo" id="titulo">-- | SIN SEÑAL</div>
+      <div class="epg">
+        <div><b>Ahora:</b> <span id="ahora">No hay información disponible</span></div>
+        <div><b>Siguiente:</b> <span id="siguiente">No hay información disponible</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="der">
+    <div class="fila"><kbd>↑</kbd><kbd>↓</kbd> Navegar</div>
+    <div class="fila"><kbd>Enter</kbd> Reproducir</div>
+    <div class="fila"><kbd>L</kbd> Lista &nbsp; <kbd>S</kbd> Buscar</div>
+    <div class="fila"><kbd>F</kbd> Favorito &nbsp; <kbd>Esc</kbd> Ocultar</div>
+    <div id="reloj">--:-- | --/--/----</div>
+  </div>
+</footer>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 
-const savedUser=localStorage.getItem('nubaraPlayUser');
-if(!savedUser){window.location.href='index.html'}
+if(!localStorage.getItem('nubaraPlayUser')){window.location.href='index.html'}
 
 const firebaseConfig={apiKey:"AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",authDomain:"nubaraplay.firebaseapp.com",projectId:"nubaraplay",storageBucket:"nubaraplay.firebasestorage.app",messagingSenderId:"873822057409",appId:"1:873822057409:web:f854a974f457eedd0c7540"};
 try{firebase.initializeApp(firebaseConfig)}catch(e){}
 const db=firebase.firestore();
 
-let canales=[], sel=0, playingId=null;
+let canales=[], sel=0, playingId=null, listaVisible=true;
 
-// Reloj con fecha (como tu TV)
-function reloj(){
-  const d=new Date();
-  const hh=String(d.getHours()).padStart(2,'0');
-  const mm=String(d.getMinutes()).padStart(2,'0');
-  const dd=String(d.getDate()).padStart(2,'0');
-  const mo=String(d.getMonth()+1).padStart(2,'0');
-  $('reloj').textContent=`${hh}:${mm} | ${dd}/${mo}/${d.getFullYear()}`;
-}
+function reloj(){const d=new Date();$('reloj').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' | '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()}
 setInterval(reloj,1000);reloj();
 
-// CARGA (sin filtro que rompa nada)
+/* CARGA — variable "canales" usada en TODO el código */
 db.collection('canales').onSnapshot(snap=>{
   canales=[];
   snap.forEach(doc=>canales.push({id:doc.id,...doc.data()}));
-  // orden por número si existe, si no por nombre
   canales.sort((a,b)=>(a.numero||0)-(b.numero||0)||String(a.nombre).localeCompare(String(b.nombre)));
   render();
-},err=>console.error(err));
+},err=>{console.error('Firebase:',err);$('scroll').innerHTML='<div class="vacio">Error: '+err.message+'</div>'});
 
 function render(){
   $('count').textContent=canales.length;
-  const box=$('lista');box.innerHTML='';
+  const box=$('scroll');box.innerHTML='';
+  if(!canales.length){box.innerHTML='<div class="vacio">Sin resultados</div>';return}
   canales.forEach((c,i)=>{
     const num=c.numero||(i+1);
-    const div=document.createElement('div');
-    div.className='ch'+(i===sel?' sel':'')+(c.id===playingId?' playing':'');
-    div.innerHTML=`<span class="num">${num}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
-    div.onclick=()=>{sel=i;play(c)};
-    box.appendChild(div);
+    const d=document.createElement('div');
+    d.className='ch'+(i===sel?' sel':'')+(c.id===playingId?' play':'');
+    d.innerHTML=`<span class="n">${num}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
+    d.onclick=()=>{sel=i;play(c)};
+    box.appendChild(d);
   });
-  // scroll al seleccionado
-  const el=box.children[sel];
-  if(el)el.scrollIntoView({block:'nearest'});
+  const el=box.children[sel];if(el)el.scrollIntoView({block:'nearest'});
 }
 
-// REPRODUCCIÓN INSTANTÁNEA
 function play(c){
   if(!c)return;
   playingId=c.id;
   $('empty').style.display='none';
   $('frame').src=c.url||'';
   const num=c.numero||(sel+1);
-  $('titulo').innerHTML=`<span class="n">${num}</span> | ${c.nombre||'SIN SEÑAL'}`;
-  $('logoBox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
+  $('titulo').innerHTML=`<span style="color:var(--morado)">${num}</span> | ${c.nombre||'SIN SEÑAL'}`;
+  $('lbox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
   $('logoCanal').style.display='flex';
   $('logoCanal').innerHTML=(c.logo?`<img src="${c.logo}">`:'')+`<span>${c.nombre||''}</span>`;
   $('ahora').textContent=c.ahora||'No hay información disponible';
@@ -213,40 +148,17 @@ function play(c){
   render();
 }
 
-// NAVEGACIÓN POR TECLADO
 document.addEventListener('keydown',e=>{
   if(!canales.length)return;
   switch(e.key){
-    case 'ArrowUp':
-      e.preventDefault();
-      sel=(sel-1+canales.length)%canales.length;
-      play(canales[sel]); break;          // cambia y reproduce de volada
-    case 'ArrowDown':
-      e.preventDefault();
-      sel=(sel+1)%canales.length;
-      play(canales[sel]); break;
-    case 'ArrowLeft':
-      e.preventDefault();
-      sel=(sel-1+canales.length)%canales.length;
-      play(canales[sel]); break;
-    case 'ArrowRight':
-      e.preventDefault();
-      sel=(sel+1)%canales.length;
-      play(canales[sel]); break;
-    case 'Enter':
-      e.preventDefault();play(canales[sel]);break;
-    case 'f':case 'F':
-      e.preventDefault();
-      let f=JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');
-      const cur=canales[sel];
-      if(f.includes(cur.id))f=f.filter(x=>x!==cur.id);else f.push(cur.id);
-      localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));break;
-    case 'l':case 'L':
-      e.preventDefault();$('lista').style.visibility=$('lista').style.visibility==='hidden'?'visible':'hidden';break;
-    case 'Escape':
-      e.preventDefault();
-      if(document.fullscreenElement)document.exitFullscreen();
-      else $('player').requestFullscreen().catch(()=>{});break;
+    case 'ArrowUp':   e.preventDefault();sel=(sel-1+canales.length)%canales.length;play(canales[sel]);break;
+    case 'ArrowDown': e.preventDefault();sel=(sel+1)%canales.length;play(canales[sel]);break;
+    case 'ArrowLeft': e.preventDefault;sel=(sel-1+canales.length)%canales.length;play(canales[sel]);break;
+    case 'ArrowRight':e.preventDefault();sel=(sel+1)%canales.length;play(canales[sel]);break;
+    case 'Enter':     e.preventDefault();play(canales[sel]);break;
+    case 'l':case 'L':e.preventDefault();listaVisible=!listaVisible;$('lista').classList.toggle('oculta',!listaVisible);break;
+    case 'f':case 'F':e.preventDefault();let f=JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');const id=canales[sel].id;f.includes(id)?f=f.filter(x=>x!==id):f.push(id);localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));break;
+    case 'Escape':    e.preventDefault();if(document.fullscreenElement)document.exitFullscreen();else $('player').requestFullscreen().catch(()=>{});break;
   }
 });
 
