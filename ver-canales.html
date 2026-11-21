@@ -95,6 +95,7 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
 
 <div id="topbar">
   <div class="nav-btns">
+    <button id="btnInicio">🏠 Inicio</button>
     <button id="btnVolver">← Volver</button>
   </div>
   <div class="user-info">
@@ -128,8 +129,8 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
   <div class="der">
     <div class="fila"><kbd>↑</kbd><kbd>↓</kbd> Navegar</div>
     <div class="fila"><kbd>Enter</kbd> Reproducir</div>
-    <div class="fila"><kbd>L</kbd> Lista &nbsp; <kbd>F</kbd> Favorito</div>
-    <div class="fila"><kbd>Esc</kbd> Pantalla completa</div>
+    <div class="fila"><kbd>L</kbd> Lista · <kbd>F</kbd> Favorito</div>
+    <div class="fila"><kbd>I</kbd> Inicio · <kbd>Esc</kbd> Fullscreen</div>
     <div id="reloj">--:-- | --/--/----</div>
   </div>
 </footer>
@@ -148,7 +149,6 @@ const db=firebase.firestore();
 
 /* ============================================================
    RANGOS POR CATEGORÍA (100 lugares cada una)
-   Si agregas más categorías, sigue el patrón de 100 en 100
    ============================================================ */
 const RANGOS = {
   'Cine':            {inicio: 1,   fin: 100},
@@ -162,7 +162,7 @@ const RANGOS = {
   'Variedades':      {inicio: 801, fin: 900},
   'Series':          {inicio: 901, fin: 1000},
 };
-const RANGO_DEFAULT = {inicio: 1001, fin: 9999}; // para categorías no mapeadas
+const RANGO_DEFAULT = {inicio: 1001, fin: 9999};
 
 function formatoNum(n){return String(n).padStart(3,'0')}
 
@@ -192,11 +192,7 @@ db.collection('agenda').onSnapshot(snap=>{
   construirLista();
 },err=>console.error('Error agenda:',err));
 
-/* Asigna número dentro del rango de su categoría.
-   Respeta el campo 'numero' si ya viene de Firebase.
-   Si no, asigna el siguiente disponible en el rango. */
 function asignarNumerosPorCategoria(){
-  // Agrupar por categoría
   const grupos={};
   canales.forEach(c=>{
     const cat=c.categoria||'Otros';
@@ -207,7 +203,6 @@ function asignarNumerosPorCategoria(){
   Object.keys(grupos).forEach(cat=>{
     const rango=RANGOS[cat]||RANGO_DEFAULT;
     const lista=grupos[cat];
-    // Ordenar: primero los que ya tienen numero definido, luego por nombre
     lista.sort((a,b)=>{
       if(a.numero&&b.numero)return a.numero-b.numero;
       if(a.numero)return -1;
@@ -215,17 +210,14 @@ function asignarNumerosPorCategoria(){
       return String(a.nombre).localeCompare(String(b.nombre));
     });
 
-    // Asignar números disponibles en el rango
     const ocupados=new Set();
     lista.forEach(c=>{if(c.numero&&c.numero>=rango.inicio&&c.numero<=rango.fin)ocupados.add(c.numero)});
 
     let siguiente=rango.inicio;
     lista.forEach(c=>{
       if(!c.numero||c.numero<rango.inicio||c.numero>rango.fin){
-        // buscar siguiente libre
         while(ocupados.has(siguiente)&&siguiente<=rango.fin)siguiente++;
         if(siguiente>rango.fin){
-          console.warn(`⚠️ Rango lleno para ${cat} (${rango.inicio}-${rango.fin}). Canal "${c.nombre}" sin número.`);
           c._numDisplay='---';
         }else{
           c._numDisplay=formatoNum(siguiente);
@@ -243,7 +235,6 @@ function construirLista(){
   listaUnificada=[];
   asignarNumerosPorCategoria();
 
-  // Orden de categorías según RANGOS (las mapeadas primero, luego las demás)
   const catsOrdenadas=Object.keys(RANGOS).filter(cat=>canales.some(c=>c.categoria===cat));
   const catsExtra=[...new Set(canales.map(c=>c.categoria).filter(Boolean))].filter(c=>!RANGOS[c]).sort();
   const todasCats=[...catsOrdenadas,...catsExtra];
@@ -261,7 +252,6 @@ function construirLista(){
     canalesCat.forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
   });
 
-  // Agenda al final
   if(eventos.length){
     listaUnificada.push({tipo:'seccion', nombre:'⚽ Agenda Deportiva', rango:''});
     const orden={'HOY':0,'MAÑANA':1,'LUNES':2,'MARTES':3,'MIÉRCOLES':4,'JUEVES':5,'VIERNES':6,'SÁBADO':7,'DOMINGO':8};
@@ -364,36 +354,40 @@ function playItem(item){
   render();
 }
 
+// ============================================================
+// SALIR A INICIO
+// ============================================================
+function irAInicio(){
+  // Si tu página de inicio se llama diferente, cambia 'index.html' aquí
+  window.location.href='index.html';
+}
+
+$('btnInicio').onclick=irAInicio;
 $('btnVolver').onclick=()=>history.back();
 $('btnCerrarLista').onclick=()=>{listaVisible=false;$('lista').classList.add('oculta')};
 
 document.addEventListener('keydown',e=>{
   const nav=getNavegables();
-  if(!nav.length)return;
   switch(e.key){
     case 'ArrowUp':
       e.preventDefault();
-      sel=(sel-1+nav.length)%nav.length;
-      playItem(nav[sel]);
+      if(nav.length){sel=(sel-1+nav.length)%nav.length;playItem(nav[sel])}
       break;
     case 'ArrowDown':
       e.preventDefault();
-      sel=(sel+1)%nav.length;
-      playItem(nav[sel]);
+      if(nav.length){sel=(sel+1)%nav.length;playItem(nav[sel])}
       break;
     case 'ArrowLeft':
       e.preventDefault();
-      sel=(sel-1+nav.length)%nav.length;
-      playItem(nav[sel]);
+      if(nav.length){sel=(sel-1+nav.length)%nav.length;playItem(nav[sel])}
       break;
     case 'ArrowRight':
       e.preventDefault();
-      sel=(sel+1)%nav.length;
-      playItem(nav[sel]);
+      if(nav.length){sel=(sel+1)%nav.length;playItem(nav[sel])}
       break;
     case 'Enter':
       e.preventDefault();
-      playItem(nav[sel]);
+      if(nav.length)playItem(nav[sel]);
       break;
     case 'l':case 'L':
       e.preventDefault();
@@ -408,6 +402,10 @@ document.addEventListener('keydown',e=>{
         f.includes(id)?f=f.filter(x=>x!==id):f.push(id);
         localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));
       }
+      break;
+    case 'i':case 'I':case 'Home':
+      e.preventDefault();
+      irAInicio();
       break;
     case 'Escape':
       e.preventDefault();
