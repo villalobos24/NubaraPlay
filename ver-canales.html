@@ -9,13 +9,11 @@
 :root{--morado:#a855f7;--texto:#e5e5e5;--gris:#888}
 html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-family:'Segoe UI',Arial,sans-serif}
 
-/* REPRODUCTOR = FONDO A PANTALLA COMPLETA */
 #player{position:fixed;inset:0;background:#000;z-index:1}
 #player iframe{width:100%;height:100%;border:none;display:block}
 #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#333;font-size:15px;z-index:2}
 #empty span{font-size:46px;opacity:.5}
 
-/* BARRA SUPERIOR CON NAVEGACIÓN */
 #topbar{position:fixed;top:0;left:0;right:0;z-index:15;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.9),transparent);pointer-events:none}
 #topbar>*{pointer-events:auto}
 #topbar .nav-btns{display:flex;gap:8px}
@@ -26,7 +24,6 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
 #topbar .user-tag{background:var(--morado);color:#fff;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px}
 #topbar .clock{color:var(--gris);font-family:monospace;font-size:12px}
 
-/* LISTA FLOTANTE (arriba-izquierda, fondo semi-transparente) */
 #lista{
   position:fixed;top:50px;left:0;width:290px;max-height:calc(100vh - 160px);z-index:10;
   background:rgba(8,8,12,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
@@ -39,6 +36,17 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
 #lista .head .cerrar:hover{color:#fff}
 #scroll{flex:1;overflow-y:auto;padding:4px 0}
 #scroll::-webkit-scrollbar{width:5px}#scroll::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
+
+/* Sección (título de categoría) */
+.sec{
+  padding:10px 16px 6px;font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--morado);border-top:1px solid #1a1a22;margin-top:6px;
+  display:flex;align-items:center;gap:8px;
+}
+.sec::after{content:'';flex:1;height:1px;background:#1a1a22}
+
+/* Canal */
 .ch{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;letter-spacing:.4px;border-left:3px solid transparent;transition:.12s}
 .ch:hover{background:rgba(255,255,255,.04)}
 .ch.sel{background:rgba(168,85,247,.22);border-left-color:var(--morado)}
@@ -47,40 +55,25 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
 .ch .sep{color:#333}
 .ch .nom{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch.play .nom::after{content:' ▶';color:var(--morado);font-size:10px}
-.vacio{padding:30px;text-align:center;color:#444;font-size:13px}
 
-/* LOGO CANAL (arriba-derecha) */
-#logoCanal{position:fixed;top:60px;right:90px;z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);padding:6px 14px;border-radius:8px;font-weight:800;font-size:20px;letter-spacing:1px}
-#logoCanal img{height:30px}
-
-/* CHIP CATEGORÍA (arriba-derecha extremo) */
-#catChip{position:fixed;top:60px;right:14px;z-index:10;background:var(--morado);color:#fff;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600}
-
-/* PANEL AGENDA (centro, flotante) */
-#agenda{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;
-  width:90%;max-width:900px;max-height:80vh;
-  background:rgba(8,8,12,.95);backdrop-filter:blur(12px);
-  border:1px solid #2a2a32;border-radius:12px;
-  display:none;flex-direction:column;overflow:hidden;
-}
-#agenda.visible{display:flex}
-#agenda .head{padding:16px 20px;border-bottom:1px solid #1c1c22;display:flex;justify-content:space-between;align-items:center}
-#agenda .head h2{font-size:18px;font-weight:700;color:var(--morado);letter-spacing:1px}
-#agenda .head .cerrar{background:none;border:none;color:var(--gris);cursor:pointer;font-size:22px}
-#agenda .head .cerrar:hover{color:#fff}
-#agendaScroll{flex:1;overflow-y:auto;padding:16px}
-#agendaScroll::-webkit-scrollbar{width:6px}#agendaScroll::-webkit-scrollbar-thumb{background:var(--morado);border-radius:3px}
-.ev{background:rgba(20,20,28,.8);border:1px solid #2a2a32;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer;transition:.2s}
-.ev:hover{border-color:var(--morado);transform:translateY(-2px)}
-.ev .hora{font-family:monospace;font-size:12px;color:var(--morado);margin-bottom:4px}
-.ev .nombre{font-size:15px;font-weight:700;margin-bottom:4px}
-.ev .canal{font-size:12px;color:var(--gris)}
-.ev .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-left:8px}
+/* Evento de agenda (dentro de la misma lista) */
+.ev{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:12px;border-left:3px solid transparent;transition:.12s;background:rgba(168,85,247,.04)}
+.ev:hover{background:rgba(168,85,247,.12)}
+.ev.sel{background:rgba(168,85,247,.25);border-left-color:var(--morado)}
+.ev .ico{font-size:14px}
+.ev .info{flex:1;min-width:0}
+.ev .nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev .meta{font-size:10px;color:var(--gris);margin-top:1px}
+.ev .badge{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.5px}
 .ev .badge.vivo{background:#ef4444;color:#fff}
 .ev .badge.prox{background:#06b6d4;color:#000}
 
-/* BARRA INFERIOR (degradado, flotante) */
+.vacio{padding:30px;text-align:center;color:#444;font-size:13px}
+
+#logoCanal{position:fixed;top:60px;right:90px;z-index:10;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);padding:6px 14px;border-radius:8px;font-weight:800;font-size:20px;letter-spacing:1px}
+#logoCanal img{height:30px}
+#catChip{position:fixed;top:60px;right:14px;z-index:10;background:var(--morado);color:#fff;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
 #barra{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:16px 22px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;background:linear-gradient(transparent,rgba(0,0,0,.85) 30%,#000)}
 #barra .izq{display:flex;align-items:center;gap:16px}
 #barra .lbox{width:64px;height:48px;background:#111;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
@@ -103,12 +96,8 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
   <div id="empty"><span>📡</span>Selecciona un canal</div>
 </div>
 
-<!-- BARRA SUPERIOR CON NAVEGACIÓN -->
 <div id="topbar">
   <div class="nav-btns">
-    <button id="btnTV" class="active">📺 TV</button>
-    <button id="btnAgenda">⚽ Agenda</button>
-    <button id="btnHistorial">🕐 Historial</button>
     <button id="btnVolver">← Volver</button>
   </div>
   <div class="user-info">
@@ -117,10 +106,9 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
   </div>
 </div>
 
-<!-- LISTA FLOTANTE -->
 <aside id="lista">
   <div class="head">
-    <span>Canales <span id="count">0</span></span>
+    <span>📺 Canales y Agenda</span>
     <button class="cerrar" id="btnCerrarLista" title="Cerrar (L)">✕</button>
   </div>
   <div id="scroll"></div>
@@ -129,16 +117,6 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
 <div id="logoCanal" style="display:none"></div>
 <div id="catChip">TV</div>
 
-<!-- PANEL AGENDA -->
-<div id="agenda">
-  <div class="head">
-    <h2>⚽ Agenda Deportiva</h2>
-    <button class="cerrar" id="btnCerrarAgenda">✕</button>
-  </div>
-  <div id="agendaScroll"></div>
-</div>
-
-<!-- BARRA INFERIOR -->
 <footer id="barra">
   <div class="izq">
     <div class="lbox" id="lbox"></div>
@@ -153,8 +131,8 @@ kbd{background:#1a1a22;border:1px solid #2c2c36;border-radius:3px;padding:1px 6p
   <div class="der">
     <div class="fila"><kbd>↑</kbd><kbd>↓</kbd> Navegar</div>
     <div class="fila"><kbd>Enter</kbd> Reproducir</div>
-    <div class="fila"><kbd>L</kbd> Lista &nbsp; <kbd>S</kbd> Buscar</div>
-    <div class="fila"><kbd>F</kbd> Favorito &nbsp; <kbd>Esc</kbd> Ocultar</div>
+    <div class="fila"><kbd>L</kbd> Lista &nbsp; <kbd>F</kbd> Favorito</div>
+    <div class="fila"><kbd>Esc</kbd> Pantalla completa</div>
     <div id="reloj">--:-- | --/--/----</div>
   </div>
 </footer>
@@ -171,7 +149,9 @@ const firebaseConfig={apiKey:"AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",authDomai
 try{firebase.initializeApp(firebaseConfig)}catch(e){}
 const db=firebase.firestore();
 
-let canales=[], eventos=[], sel=0, playingId=null, listaVisible=true, vistaActual='tv';
+let canales=[], eventos=[], listaVisible=true, sel=0, playingId=null;
+// listaUnificada = array de items {tipo:'canal'|'evento'|'seccion', ...}
+let listaUnificada=[];
 
 function reloj(){
   const d=new Date();
@@ -184,165 +164,195 @@ function reloj(){
 }
 setInterval(reloj,1000);reloj();
 
-/* CARGA CANALES */
 db.collection('canales').onSnapshot(snap=>{
   canales=[];
   snap.forEach(doc=>canales.push({id:doc.id,...doc.data()}));
   canales.sort((a,b)=>(a.numero||0)-(b.numero||0)||String(a.nombre).localeCompare(String(b.nombre)));
-  render();
-},err=>{console.error('Firebase:',err);$('scroll').innerHTML='<div class="vacio">Error: '+err.message+'</div>'});
+  construirLista();
+},err=>{console.error('Firebase:',err)});
 
-/* CARGA AGENDA */
 db.collection('agenda').onSnapshot(snap=>{
   eventos=[];
   snap.forEach(doc=>eventos.push({id:doc.id,...doc.data()}));
-  renderAgenda();
+  construirLista();
 },err=>console.error('Error agenda:',err));
 
-function render(){
-  $('count').textContent=canales.length;
-  const box=$('scroll');box.innerHTML='';
-  if(!canales.length){box.innerHTML='<div class="vacio">Sin resultados</div>';return}
-  canales.forEach((c,i)=>{
-    const num=c.numero||(i+1);
-    const d=document.createElement('div');
-    d.className='ch'+(i===sel?' sel':'')+(c.id===playingId?' play':'');
-    d.innerHTML=`<span class="n">${num}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
-    d.onclick=()=>{sel=i;play(c)};
-    box.appendChild(d);
-  });
-  const el=box.children[sel];if(el)el.scrollIntoView({block:'nearest'});
-}
-
-function renderAgenda(){
-  const box=$('agendaScroll');box.innerHTML='';
-  if(!eventos.length){box.innerHTML='<div class="vacio">No hay eventos</div>';return}
-  const ahora=new Date();
-  const hhmm=String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
-  eventos.forEach(ev=>{
-    let estado='';
-    if(ev.horaInicio&&ev.horaFin){
-      if(hhmm>=ev.horaInicio&&hhmm<=ev.horaFin) estado='<span class="badge vivo">EN VIVO</span>';
-      else if(hhmm<ev.horaInicio) estado='<span class="badge prox">PRÓXIMO</span>';
-    }
-    const d=document.createElement('div');
-    d.className='ev';
-    d.innerHTML=`
-      <div class="hora">🕒 ${ev.dia||''} ${ev.horaInicio||''} - ${ev.horaFin||''} ${estado}</div>
-      <div class="nombre">${ev.nombre||'Sin nombre'}</div>
-      <div class="canal">📡 ${ev.canal||''}</div>
-    `;
-    d.onclick=()=>{
-      if(ev.url){
-        setVista('tv');
-        const idx=canales.findIndex(c=>c.id===ev.canalId);
-        if(idx>=0){sel=idx;play(canales[idx])}
-        else{playingId='agenda-'+ev.id;$('frame').src=ev.url;$('titulo').innerHTML=ev.nombre||'AGENDA';$('empty').style.display='none'}
-      }
-    };
-    box.appendChild(d);
-  });
-}
-
-function play(c){
-  if(!c)return;
-  playingId=c.id;
-  $('empty').style.display='none';
-  $('frame').src=c.url||'';
-  const num=c.numero||(sel+1);
-  $('titulo').innerHTML=`<span style="color:var(--morado)">${num}</span> | ${c.nombre||'SIN SEÑAL'}`;
-  $('lbox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
-  $('logoCanal').style.display='flex';
-  $('logoCanal').innerHTML=(c.logo?`<img src="${c.logo}">`:'')+`<span>${c.nombre||''}</span>`;
-  $('ahora').textContent=c.ahora||'No hay información disponible';
-  $('siguiente').textContent=c.siguiente||'No hay información disponible';
+function construirLista(){
+  listaUnificada=[];
+  
+  // Sección 1: Canales agrupados por categoría
+  const cats=[...new Set(canales.map(c=>c.categoria).filter(Boolean))].sort();
+  if(cats.length){
+    cats.forEach(cat=>{
+      listaUnificada.push({tipo:'seccion', nombre:cat});
+      canales.filter(c=>c.categoria===cat).forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
+    });
+  }else{
+    listaUnificada.push({tipo:'seccion', nombre:'📺 Todos los canales'});
+    canales.forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
+  }
+  
+  // Sección 2: Agenda (si hay eventos)
+  if(eventos.length){
+    listaUnificada.push({tipo:'seccion', nombre:'⚽ Agenda Deportiva'});
+    // ordenar: hoy primero, luego por hora
+    const orden={'HOY':0,'MAÑANA':1,'LUNES':2,'MARTES':3,'MIÉRCOLES':4,'JUEVES':5,'VIERNES':6,'SÁBADO':7,'DOMINGO':8};
+    eventos.sort((a,b)=>(orden[(a.dia||'').toUpperCase()]??99)-(orden[(b.dia||'').toUpperCase()]??99)||(a.horaInicio||'').localeCompare(b.horaInicio||''));
+    eventos.forEach(ev=>listaUnificada.push({tipo:'evento', data:ev}));
+  }
+  
+  // Ajustar sel si se sale de rango
+  const navegables=listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento');
+  if(sel>=navegables.length)sel=0;
   render();
 }
 
-function setVista(v){
-  vistaActual=v;
-  $('btnTV').classList.toggle('active',v==='tv');
-  $('btnAgenda').classList.toggle('active',v==='agenda');
-  $('btnHistorial').classList.toggle('active',v==='historial');
-  $('catChip').textContent=v==='tv'?'TV':v==='agenda'?'AGENDA':'HISTORIAL';
-  $('agenda').classList.toggle('visible',v==='agenda');
-  if(v==='tv')$('lista').classList.toggle('oculta',!listaVisible);
-  else $('lista').classList.add('oculta');
+function getNavegables(){
+  return listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento');
 }
 
-/* NAVEGACIÓN BOTONES */
-$('btnTV').onclick=()=>setVista('tv');
-$('btnAgenda').onclick=()=>setVista('agenda');
-$('btnHistorial').onclick=()=>{
-  setVista('historial');
-  const hist=JSON.parse(localStorage.getItem('nubaraPlayHistorial')||'[]');
+function render(){
   const box=$('scroll');box.innerHTML='';
-  if(!hist.length){box.innerHTML='<div class="vacio">Sin historial</div>';return}
-  hist.forEach((h,i)=>{
-    const d=document.createElement('div');
-    d.className='ch';
-    d.innerHTML=`<span class="n">${i+1}</span><span class="sep">|</span><span class="nom">${h.nombre||'S/N'}</span>`;
-    d.onclick=()=>{
-      const c=canales.find(x=>x.id===h.id);
-      if(c){sel=canales.indexOf(c);play(c)}
-      else{playingId=h.id;$('frame').src=h.url;$('titulo').innerHTML=h.nombre||'HISTORIAL';$('empty').style.display='none'}
-    };
-    box.appendChild(d);
+  if(!listaUnificada.length){box.innerHTML='<div class="vacio">Cargando...</div>';return}
+  
+  const navegables=getNavegables();
+  let navIdx=-1; // índice dentro de navegables
+  
+  listaUnificada.forEach(item=>{
+    if(item.tipo==='seccion'){
+      const s=document.createElement('div');
+      s.className='sec';
+      s.textContent=item.nombre;
+      box.appendChild(s);
+    }
+    else if(item.tipo==='canal'){
+      navIdx++;
+      const c=item.data;
+      const num=c.numero||(navIdx+1);
+      const d=document.createElement('div');
+      const esSel=(navegables[sel]&&navegables[sel].data&&navegables[sel].data.id===c.id);
+      d.className='ch'+(esSel?' sel':'')+(c.id===playingId?' play':'');
+      d.innerHTML=`<span class="n">${num}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
+      d.onclick=()=>{sel=navIdx;playItem(navegables[sel])};
+      box.appendChild(d);
+    }
+    else if(item.tipo==='evento'){
+      navIdx++;
+      const ev=item.data;
+      const ahora=new Date();
+      const hhmm=String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
+      let badge='';
+      if(ev.horaInicio&&ev.horaFin){
+        if(hhmm>=ev.horaInicio&&hhmm<=ev.horaFin) badge='<span class="badge vivo">EN VIVO</span>';
+        else if(hhmm<ev.horaInicio) badge='<span class="badge prox">PRÓXIMO</span>';
+      }
+      const esSel=(navegables[sel]&&navegables[sel].data&&navegables[sel].data.id===ev.id);
+      const d=document.createElement('div');
+      d.className='ev'+(esSel?' sel':'');
+      d.innerHTML=`
+        <span class="ico">⚽</span>
+        <div class="info">
+          <div class="nom">${ev.nombre||'Evento'} ${badge}</div>
+          <div class="meta">${ev.dia||''} ${ev.horaInicio||''}-${ev.horaFin||''} · ${ev.canal||''}</div>
+        </div>
+      `;
+      d.onclick=()=>{sel=navIdx;playItem(navegables[sel])};
+      box.appendChild(d);
+    }
   });
-};
-$('btnVolver').onclick=()=>{setVista('tv');history.back()};
-$('btnCerrarLista').onclick=()=>{listaVisible=false;$('lista').classList.add('oculta')};
-$('btnCerrarAgenda').onclick=()=>setVista('tv');
+  
+  // Scroll al seleccionado
+  const els=box.querySelectorAll('.ch.sel, .ev.sel');
+  if(els[0])els[0].scrollIntoView({block:'nearest',behavior:'smooth'});
+}
 
-/* TECLADO */
+function playItem(item){
+  if(!item)return;
+  if(item.tipo==='canal'){
+    const c=item.data;
+    playingId=c.id;
+    $('empty').style.display='none';
+    $('frame').src=c.url||'';
+    const num=c.numero||(sel+1);
+    $('titulo').innerHTML=`<span style="color:var(--morado)">${num}</span> | ${c.nombre||'SIN SEÑAL'}`;
+    $('lbox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
+    $('logoCanal').style.display='flex';
+    $('logoCanal').innerHTML=(c.logo?`<img src="${c.logo}">`:'')+`<span>${c.nombre||''}</span>`;
+    $('ahora').textContent=c.ahora||'No hay información disponible';
+    $('siguiente').textContent=c.siguiente||'No hay información disponible';
+    $('catChip').textContent='TV';
+  }else if(item.tipo==='evento'){
+    const ev=item.data;
+    playingId='agenda-'+ev.id;
+    if(ev.url){
+      $('empty').style.display='none';
+      $('frame').src=ev.url;
+      $('titulo').innerHTML=`⚽ ${ev.nombre||'EVENTO'}`;
+      $('lbox').innerHTML='';
+      $('logoCanal').style.display='flex';
+      $('logoCanal').innerHTML=`<span>⚽ ${ev.nombre||''}</span>`;
+      $('ahora').textContent=`${ev.dia||''} ${ev.horaInicio||''}-${ev.horaFin||''}`;
+      $('siguiente').textContent=ev.canal||'';
+      $('catChip').textContent='AGENDA';
+    }
+  }
+  render();
+}
+
+$('btnVolver').onclick=()=>history.back();
+$('btnCerrarLista').onclick=()=>{listaVisible=false;$('lista').classList.add('oculta')};
+
 document.addEventListener('keydown',e=>{
+  const nav=getNavegables();
+  if(!nav.length)return;
   switch(e.key){
     case 'ArrowUp':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales.length){sel=(sel-1+canales.length)%canales.length;play(canales[sel])}
+      sel=(sel-1+nav.length)%nav.length;
+      playItem(nav[sel]);
       break;
     case 'ArrowDown':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales.length){sel=(sel+1)%canales.length;play(canales[sel])}
+      sel=(sel+1)%nav.length;
+      playItem(nav[sel]);
       break;
     case 'ArrowLeft':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales.length){sel=(sel-1+canales.length)%canales.length;play(canales[sel])}
+      sel=(sel-1+nav.length)%nav.length;
+      playItem(nav[sel]);
       break;
     case 'ArrowRight':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales.length){sel=(sel+1)%canales.length;play(canales[sel])}
+      sel=(sel+1)%nav.length;
+      playItem(nav[sel]);
       break;
     case 'Enter':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales.length)play(canales[sel]);
+      playItem(nav[sel]);
       break;
     case 'l':case 'L':
       e.preventDefault();
-      if(vistaActual==='tv'){
-        listaVisible=!listaVisible;
-        $('lista').classList.toggle('oculta',!listaVisible);
-      }
+      listaVisible=!listaVisible;
+      $('lista').classList.toggle('oculta',!listaVisible);
       break;
     case 'f':case 'F':
       e.preventDefault();
-      if(vistaActual==='tv'&&canales[sel]){
+      if(nav[sel]&&nav[sel].tipo==='canal'){
         let f=JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');
-        const id=canales[sel].id;
+        const id=nav[sel].data.id;
         f.includes(id)?f=f.filter(x=>x!==id):f.push(id);
         localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));
       }
       break;
     case 'Escape':
       e.preventDefault();
-      if($('agenda').classList.contains('visible'))setVista('tv');
-      else if(document.fullscreenElement)document.exitFullscreen();
+      if(document.fullscreenElement)document.exitFullscreen();
       else $('player').requestFullscreen().catch(()=>{});
       break;
   }
 });
 
-render();
+construirLista();
 </script>
 </body>
 </html>
