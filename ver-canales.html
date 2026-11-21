@@ -6,7 +6,6 @@
     <title>Canales en Vivo - NubaraPlay</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
     
-    <!-- LIBRERÍA HLS.JS PARA REPRODUCIR .M3U8 -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
@@ -19,7 +18,6 @@
         .hidden { display: none !important; }
         button { font-family: inherit; }
 
-        /* ============ TOPBAR ============ */
         .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); gap: 12px; flex-shrink: 0; }
         .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; }
         .topbar-center { display: flex; align-items: center; gap: 14px; }
@@ -38,10 +36,8 @@
         .wifi { color: var(--muted); font-size: 16px; }
         .clock { font-weight: 700; font-size: 15px; color: #fff; min-width: 74px; text-align: right; }
 
-        /* ============ LAYOUT ============ */
         .body-grid { flex: 1; display: flex; min-height: 0; }
 
-        /* ============ SIDEBAR ============ */
         .sidebar { width: 92px; background: var(--panel); border-right: 1px solid var(--border); padding: 14px 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex-shrink: 0; }
         .side-item { background: none; border: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; cursor: pointer; font-size: 11px; border-radius: 10px; margin: 0 8px; text-decoration: none; transition: .2s; }
         .side-item .ico { font-size: 20px; line-height: 1; }
@@ -49,7 +45,6 @@
         .side-item.active { color: var(--orange); }
         .side-item.danger:hover { color: #ef4444; border-color: #ef4444; }
 
-        /* ============ MAIN ============ */
         .main-area { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; overflow-y: auto; }
         .player-shell { position: relative; background: #000; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; max-height: 64vh; margin: 0 auto; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
         .player-zoom { position: absolute; inset: 0; transition: transform .2s ease; }
@@ -78,7 +73,6 @@
         .chip.active { background: var(--orange); color: #141414; border-color: var(--orange); }
         .chip-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; align-self: center; margin-right: 4px; }
 
-        /* ============ LISTA DE CANALES (derecha) ============ */
         .channel-list { width: 300px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
         .list-nav { background: transparent; border: none; color: var(--muted); padding: 8px; cursor: pointer; font-size: 13px; }
         .list-nav:hover { color: var(--orange); }
@@ -94,7 +88,6 @@
         .chan-name { font-size: 14.5px; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .list-empty { color: var(--muted); text-align: center; padding: 30px 10px; font-size: 13px; }
 
-        /* ============ AGENDA ============ */
         .agenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
         .agenda-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: .25s; position: relative; }
         .agenda-card:hover { border-color: var(--orange); transform: translateY(-3px); }
@@ -107,7 +100,6 @@
         .badge-proximo { background: #17a2b8; color: #fff; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
-        /* ============ RESPONSIVE ============ */
         @media (max-width: 900px) {
             body { overflow: auto; height: auto; }
             .body-grid { flex-direction: column; }
@@ -122,7 +114,6 @@
     </style>
 </head>
 <body>
-    <!-- ================= TOPBAR ================= -->
     <header class="topbar">
         <div class="topbar-left">
             <button class="ghost-btn" id="btnVolver">← Volver</button>
@@ -145,7 +136,6 @@
     </header>
 
     <div class="body-grid">
-        <!-- ================= SIDEBAR ================= -->
         <aside class="sidebar">
             <button class="side-item active" data-view="tv"><span class="ico">📺</span>TV</button>
             <button class="side-item" data-view="destacados"><span class="ico">👍</span>Destacados</button>
@@ -155,9 +145,7 @@
             <button class="side-item danger" id="btnSalir" style="margin-top:auto"><span class="ico">⏻</span>Salir</button>
         </aside>
 
-        <!-- ================= MAIN ================= -->
         <main class="main-area">
-            <!-- Vista Reproductor -->
             <section id="viewPlayer" style="display:flex; flex-direction:column; gap:14px;">
                 <div class="player-shell" id="playerShell">
                     <div class="player-zoom" id="playerZoom">
@@ -178,14 +166,12 @@
                 <div class="chips" id="chips"></div>
             </section>
 
-            <!-- Vista Agenda -->
             <section id="viewAgenda" class="hidden">
                 <h2 style="font-size:20px; margin-bottom:16px;">📅 Agenda Deportiva</h2>
                 <div class="agenda-grid" id="agendaContainer"><div class="list-empty">Cargando agenda...</div></div>
             </section>
         </main>
 
-        <!-- ================= LISTA DERECHA ================= -->
         <aside class="channel-list" id="channelList">
             <button class="list-nav" id="btnScrollUp">▲</button>
             <div class="list-scroll" id="listScroll"></div>
@@ -290,21 +276,24 @@
         }
 
         // ==========================================================
-        // ==== PROXY CON TOKEN ANTI-EXTENSIÓN (SOLUCIÓN 5) ====
+        // ==== PROXY CON TOKEN ANTI-EXTENSIÓN (SOLO PARA .M3U8) ====
         // ==========================================================
         const PROXY_URL = 'https://nubara-proxy.villaloboshdez.workers.dev';
 
         function proxify(url) {
             if (!url) return '';
-            
-            // Agregar parámetro falso para que la URL NO termine en .m3u8
-            // Así la extensión "Native HLS Playback" no la interceptará
-            const separator = url.includes('?') ? '&' : '?';
-            const disguisedUrl = url + separator + 'token=nubara';
-            
-            return PROXY_URL + '?u=' + encodeURIComponent(disguisedUrl);
+            // Solo agregar token si es .m3u8 (para evitar que la extensión lo intercepte)
+            if (url.includes('.m3u8')) {
+                const separator = url.includes('?') ? '&' : '?';
+                return PROXY_URL + '?u=' + encodeURIComponent(url + separator + 'token=nubara');
+            }
+            // Si es .php o embed, devolver URL directa (sin proxy)
+            return url;
         }
 
+        // ==========================================================
+        // ==== FUNCIÓN PLAY CON LÓGICA DUAL RESTAURADA ====
+        // ==========================================================
         function play(canal) {
             playingId = canal.id;
             $('playerTitleText').textContent = canal.nombre || '';
@@ -324,34 +313,46 @@
             video.src = "";
             iframe.src = "";
 
-            // 2. Decidir motor de reproducción
-            // Como todas las URLs pasan por el proxy, usamos HLS.js para todas
-            iframe.style.display = 'none';
-            video.style.display = 'block';
+            // 2. LÓGICA DUAL: detectar tipo de URL
+            const isM3U8 = rawUrl.includes('.m3u8');
+            const isEmbed = rawUrl.includes('.php') || rawUrl.includes('embed') || rawUrl.includes('iframe') || rawUrl.includes('youtube') || rawUrl.includes('vimeo');
 
-            if (Hls.isSupported()) {
-                hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-                hls.loadSource(playUrl);
-                hls.attachMedia(video);
-                
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    video.play().catch(e => console.log("Autoplay bloqueado:", e));
-                });
+            if (isM3U8) {
+                // === MODO .M3U8: HLS.js + Worker ===
+                iframe.style.display = 'none';
+                video.style.display = 'block';
 
-                // 3. FALLBACK: Si el proxy falla, abrir en pestaña nueva
-                hls.on(Hls.Events.ERROR, function (event, data) {
-                    if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                        console.warn("⚠️ Stream bloqueado. Activando fallback...");
-                        const confirmOpen = confirm(`⚠️ El canal no pudo reproducirse.\n\n¿Deseas abrirlo en una pestaña nueva?\n\nCanal: ${canal.nombre}`);
-                        if (confirmOpen) {
+                if (Hls.isSupported()) {
+                    hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+                    hls.loadSource(playUrl);
+                    hls.attachMedia(video);
+                    
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play().catch(e => console.log("Autoplay bloqueado:", e));
+                    });
+
+                    // Fallback: si falla, abrir en pestaña nueva
+                    hls.on(Hls.Events.ERROR, function (event, data) {
+                        if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            console.warn("⚠️ Stream .m3u8 bloqueado. Abriendo en pestaña nueva...");
                             window.open(rawUrl, '_blank');
                         }
-                    }
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Soporte nativo Safari
-                video.src = playUrl;
-                video.addEventListener('loadedmetadata', function() { video.play(); });
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Safari nativo
+                    video.src = playUrl;
+                    video.addEventListener('loadedmetadata', function() { video.play(); });
+                }
+            } else if (isEmbed) {
+                // === MODO .PHP / EMBED: Iframe directo ===
+                video.style.display = 'none';
+                iframe.style.display = 'block';
+                iframe.src = rawUrl; // URL directa, sin proxy
+            } else {
+                // === MODO DESCONOCIDO: Intentar iframe ===
+                video.style.display = 'none';
+                iframe.style.display = 'block';
+                iframe.src = rawUrl;
             }
 
             // Historial
