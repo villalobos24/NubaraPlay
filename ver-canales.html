@@ -3,193 +3,456 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NubaraPlay</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<title>NubaraPlay IPTV</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#0a0a0f;
-  --surface:#12121a;
-  --surface-2:#1a1a24;
+  --sidebar-bg:#12121a;
+  --surface:#1a1a24;
   --border:#2a2a35;
   --text:#ffffff;
   --text-dim:#8a8a9a;
-  --accent:#6366f1;
-  --accent-glow:rgba(99,102,241,0.3);
+  --accent:#8b5cf6;
+  --accent-hover:#7c3aed;
   --success:#10b981;
   --warning:#f59e0b;
   --danger:#ef4444;
 }
-html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
-/* Layout asimétrico */
-.app{display:grid;grid-template-columns:280px 1fr 380px;grid-template-rows:60px 1fr;height:100vh;gap:0}
+/* Layout principal: Sidebar izquierdo + Contenido derecho */
+.app{display:grid;grid-template-columns:320px 1fr;height:100vh}
 
-/* Header */
-.header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
-.logo{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+/* ===== SIDEBAR IZQUIERDO (Lista de canales) ===== */
+.sidebar{
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.sidebar-header{
+  padding:20px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.sidebar-title{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.sidebar-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)}
+
+.search-box{padding:16px 20px;border-bottom:1px solid var(--border)}
+.search-input{
+  width:100%;
+  padding:12px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text-dim)}
+
+.channel-list{
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+}
+.channel-list::-webkit-scrollbar{width:6px}
+.channel-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.channel-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  margin-bottom:8px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .2s;
+  border:2px solid transparent;
+  position:relative;
+}
+.channel-item:hover{
+  background:var(--surface);
+  transform:translateX(4px);
+}
+.channel-item.focused{
+  background:rgba(139,92,246,0.15);
+  border-color:var(--accent);
+}
+.channel-item.playing{
+  background:rgba(139,92,246,0.2);
+  border-color:var(--accent);
+}
+.channel-item.playing::before{
+  content:'▶';
+  position:absolute;
+  right:14px;
+  color:var(--accent);
+  font-size:12px;
+  animation:pulse 1.5s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.channel-number{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  font-weight:700;
+  color:var(--text-dim);
+  min-width:28px;
+  text-align:center;
+}
+.channel-item.playing .channel-number{color:var(--accent)}
+
+.channel-logo{
+  width:48px;
+  height:36px;
+  background:var(--surface);
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.channel-logo img{max-width:90%;max-height:90%;object-fit:contain}
+
+.channel-info{flex:1;min-width:0}
+.channel-name{
+  font-size:14px;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  margin-bottom:2px;
+}
+.channel-category{
+  font-size:11px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+/* ===== CONTENIDO DERECHO (Reproductor + Info) ===== */
+.content{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* Header superior */
+.topbar{
+  padding:16px 24px;
+  background:var(--sidebar-bg);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.logo{font-size:20px;font-weight:800;letter-spacing:-0.5px}
 .logo span{color:var(--accent)}
-.header-actions{display:flex;gap:12px;align-items:center}
-.header-btn{padding:8px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:13px;cursor:pointer;transition:all .2s}
-.header-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.user-info{display:flex;align-items:center;gap:12px;font-size:13px}
-.user-badge{padding:4px 10px;background:var(--accent);color:#fff;border-radius:4px;font-size:11px;font-weight:700}
+.topbar-actions{display:flex;gap:12px;align-items:center}
+.topbar-btn{
+  padding:8px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:6px;
+  color:var(--text-dim);
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+}
+.topbar-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.user-info{display:flex;align-items:center;gap:12px}
+.user-badge{
+  padding:4px 12px;
+  background:var(--accent);
+  color:#fff;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
 .clock{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-dim)}
 
-/* Sidebar */
-.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;overflow-y:auto}
-.nav-section{margin-bottom:24px}
-.nav-label{padding:0 20px;font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
-.nav-item:hover{background:var(--surface-2)}
-.nav-item.active{background:rgba(99,102,241,0.1);border-left-color:var(--accent);color:var(--accent)}
-.nav-item .icon{font-size:18px;width:24px;text-align:center}
-.nav-item .label{font-size:14px;font-weight:500}
+/* Área del reproductor */
+.player-area{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:24px;
+  gap:20px;
+  overflow:hidden;
+}
 
-/* Main content */
-.main{display:flex;flex-direction:column;overflow:hidden}
-.player-container{flex:1;display:flex;flex-direction:column;padding:20px;gap:16px;min-height:0}
-.player-wrapper{position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;max-height:calc(100vh - 280px);box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.player-wrapper{
+  position:relative;
+  background:#000;
+  border-radius:12px;
+  overflow:hidden;
+  aspect-ratio:16/9;
+  max-height:calc(100vh - 320px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  border:1px solid var(--border);
+}
 .player-wrapper iframe{width:100%;height:100%;border:none}
-.player-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.8) 100%);pointer-events:none;opacity:0;transition:opacity .3s}
-.player-wrapper:hover .player-overlay{opacity:1}
-.player-info{position:absolute;bottom:0;left:0;right:0;padding:20px;transform:translateY(100%);transition:transform .3s}
-.player-wrapper:hover .player-info{transform:translateY(0)}
-.player-title{font-size:20px;font-weight:700;margin-bottom:4px}
-.player-category{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
-.player-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-dim);background:var(--surface)}
-.player-empty .icon{font-size:48px;opacity:0.3}
-.player-empty .text{font-size:14px}
 
-/* Controls */
-.controls{display:flex;align-items:center;gap:12px;padding:0 4px}
-.ctrl-btn{padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px}
-.ctrl-btn:hover{background:var(--surface-2);border-color:var(--accent);transform:translateY(-1px)}
+.player-empty{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  background:linear-gradient(135deg,#1a1a24 0%,#0a0a0f 100%);
+}
+.player-empty .icon{font-size:64px;opacity:0.3}
+.player-empty .text{font-size:16px;color:var(--text-dim)}
+.player-empty .subtext{font-size:13px;color:var(--text-dim);opacity:0.6}
+
+.loading-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:16px;
+  backdrop-filter:blur(10px);
+}
+.loading-overlay.active{display:flex}
+.loader{
+  width:60px;
+  height:60px;
+  border:4px solid rgba(139,92,246,0.2);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:1px}
+
+/* Info del canal (barra inferior) */
+.channel-info-bar{
+  background:var(--sidebar-bg);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px 24px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+.channel-info-logo{
+  width:64px;
+  height:48px;
+  background:var(--surface);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.channel-info-logo img{max-width:90%;max-height:90%;object-fit:contain}
+.channel-info-details{flex:1}
+.channel-info-name{font-size:20px;font-weight:700;margin-bottom:4px}
+.channel-info-meta{display:flex;gap:20px;font-size:13px;color:var(--text-dim)}
+.channel-info-meta span{display:flex;align-items:center;gap:6px}
+.channel-info-meta strong{color:var(--text);font-weight:600}
+
+/* Controles */
+.controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:0 4px;
+  flex-wrap:wrap;
+}
+.ctrl-btn{
+  padding:10px 18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.ctrl-btn:hover{background:var(--accent);border-color:var(--accent);transform:translateY(-2px)}
 .ctrl-btn:active{transform:translateY(0)}
 .ctrl-btn.primary{background:var(--accent);border-color:var(--accent)}
-.ctrl-btn.primary:hover{background:#5558e6}
-.ctrl-btn kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;background:rgba(255,255,255,0.1);border-radius:3px;color:var(--text-dim)}
-.zoom-control{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
-.zoom-control button{width:28px;height:28px;background:transparent;border:none;color:var(--text);cursor:pointer;border-radius:4px;font-size:16px}
-.zoom-control button:hover{background:var(--surface-2)}
-.zoom-control span{font-family:'JetBrains Mono',monospace;font-size:13px;min-width:48px;text-align:center}
+.ctrl-btn.primary:hover{background:var(--accent-hover)}
+.ctrl-btn kbd{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  padding:2px 6px;
+  background:rgba(255,255,255,0.1);
+  border-radius:3px;
+  color:var(--text-dim);
+}
+.zoom-control{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.zoom-control button{
+  width:28px;
+  height:28px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  cursor:pointer;
+  border-radius:4px;
+  font-size:16px;
+  font-weight:700;
+}
+.zoom-control button:hover{background:var(--accent)}
+.zoom-control span{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  min-width:48px;
+  text-align:center;
+  font-weight:600;
+}
 
-/* Categories */
-.categories{display:flex;gap:8px;flex-wrap:wrap;padding:0 4px}
-.cat-chip{padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;color:var(--text-dim);cursor:pointer;transition:all .15s}
+/* Categorías */
+.categories{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:0 4px;
+}
+.cat-chip{
+  padding:8px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-dim);
+  cursor:pointer;
+  transition:all .2s;
+}
 .cat-chip:hover{border-color:var(--accent);color:var(--text)}
 .cat-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* Channel list */
-.channel-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.panel-title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.panel-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)}
-.search-box{padding:12px 20px;border-bottom:1px solid var(--border)}
-.search-input{width:100%;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s}
-.search-input:focus{border-color:var(--accent)}
-.search-input::placeholder{color:var(--text-dim)}
-.channel-list{flex:1;overflow-y:auto;padding:12px}
-.channel-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:6px;border:2px solid transparent;position:relative}
-.channel-item:hover{background:var(--surface-2)}
-.channel-item.focused{background:rgba(99,102,241,0.15);border-color:var(--accent)}
-.channel-item.playing{background:rgba(16,185,129,0.1);border-color:var(--success)}
-.channel-item.playing::before{content:'▶';position:absolute;right:12px;color:var(--success);font-size:12px}
-.channel-logo{width:52px;height:40px;background:var(--surface-2);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-.channel-logo img{max-width:90%;max-height:90%;object-fit:contain}
-.channel-info{flex:1;min-width:0}
-.channel-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.channel-cat{font-size:11px;color:var(--text-dim);margin-top:2px}
-
 /* Keyboard hints */
-.kbd-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:16px;padding:10px 20px;background:rgba(18,18,26,0.95);border:1px solid var(--border);border-radius:8px;backdrop-filter:blur(10px);font-size:11px;color:var(--text-dim);z-index:100}
+.kbd-bar{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:16px;
+  padding:10px 20px;
+  background:rgba(18,18,26,0.95);
+  border:1px solid var(--border);
+  border-radius:8px;
+  backdrop-filter:blur(10px);
+  font-size:11px;
+  color:var(--text-dim);
+  z-index:100;
+}
 .kbd-bar span{display:flex;align-items:center;gap:6px}
-.kbd-bar kbd{font-family:'JetBrains Mono',monospace;padding:2px 6px;background:var(--surface-2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:10px}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-
-/* Loading indicator */
-.loading-bar{position:absolute;top:0;left:0;height:2px;background:var(--accent);animation:loading 1.5s ease-in-out infinite;opacity:0}
-.loading-bar.active{opacity:1}
-@keyframes loading{0%{width:0;left:0}50%{width:70%;left:30%}100%{width:0;left:100%}}
+.kbd-bar kbd{
+  font-family:'JetBrains Mono',monospace;
+  padding:2px 6px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:3px;
+  color:var(--text);
+  font-size:10px;
+}
 
 /* Responsive */
-@media(max-width:1200px){.app{grid-template-columns:240px 1fr 320px}}
-@media(max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:60px auto 1fr auto}.sidebar,.channel-panel{display:none}}
+@media(max-width:1200px){
+  .app{grid-template-columns:280px 1fr}
+}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .sidebar{max-height:40vh}
+  .kbd-bar{display:none}
+}
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- Header -->
-  <header class="header">
-    <div class="logo">Nubara<span>Play</span></div>
-    <div class="header-actions">
-      <button class="header-btn" id="btnVolver">← Volver</button>
-      <button class="header-btn" id="btnHistorial">Historial</button>
-    </div>
-    <div class="user-info">
-      <span class="user-badge" id="userInfo">USUARIO</span>
-      <span class="clock" id="clock">--:--</span>
-    </div>
-  </header>
-
-  <!-- Sidebar -->
+  <!-- SIDEBAR IZQUIERDO: Lista de canales -->
   <aside class="sidebar">
-    <div class="nav-section">
-      <div class="nav-label">Navegación</div>
-      <div class="nav-item active" data-view="tv">
-        <span class="icon">📺</span>
-        <span class="label">TV en Vivo</span>
-      </div>
-      <div class="nav-item" data-view="destacados">
-        <span class="icon">⭐</span>
-        <span class="label">Destacados</span>
-      </div>
-      <div class="nav-item" data-view="agenda">
-        <span class="icon">📅</span>
-        <span class="label">Agenda</span>
-      </div>
+    <div class="sidebar-header">
+      <div class="sidebar-title">📺 Canales</div>
+      <div class="sidebar-count" id="channelCount">0</div>
     </div>
-    <div class="nav-section">
-      <div class="nav-label">Biblioteca</div>
-      <a class="nav-item" href="genero.html">
-        <span class="icon">🎬</span>
-        <span class="label">Películas</span>
-      </a>
-      <div class="nav-item" data-view="historial">
-        <span class="icon">🕐</span>
-        <span class="label">Historial</span>
-      </div>
+    <div class="search-box">
+      <input type="text" class="search-input" id="searchInput" placeholder="Buscar canal...">
     </div>
-    <div class="nav-section" style="margin-top:auto">
-      <div class="nav-item danger" id="btnSalir">
-        <span class="icon">⏻</span>
-        <span class="label">Salir</span>
-      </div>
-    </div>
+    <div class="channel-list" id="channelList"></div>
   </aside>
 
-  <!-- Main -->
-  <main class="main">
-    <div class="player-container">
+  <!-- CONTENIDO DERECHO: Reproductor + Info -->
+  <div class="content">
+    <!-- Header superior -->
+    <header class="topbar">
+      <div class="logo">Nubara<span>Play</span></div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" id="btnVolver">← Volver</button>
+        <button class="topbar-btn" id="btnHistorial">Historial</button>
+      </div>
+      <div class="user-info">
+        <span class="user-badge" id="userInfo">USUARIO</span>
+        <span class="clock" id="clock">--:--</span>
+      </div>
+    </header>
+
+    <!-- Área del reproductor -->
+    <div class="player-area">
       <div class="player-wrapper" id="playerWrapper">
-        <div class="loading-bar" id="loadingBar"></div>
-        <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-        <div class="player-overlay"></div>
-        <div class="player-info">
-          <div class="player-title" id="playerTitle">Selecciona un canal</div>
-          <div class="player-category" id="playerCategory">Usa las flechas del teclado para navegar</div>
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="loader"></div>
+          <div class="loading-text">CARGANDO...</div>
         </div>
+        <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
         <div class="player-empty" id="playerEmpty">
           <div class="icon">📡</div>
-          <div class="text">Selecciona un canal para comenzar</div>
+          <div class="text">Selecciona un canal</div>
+          <div class="subtext">Usa ↑↓ para navegar · Enter para reproducir</div>
         </div>
       </div>
 
+      <!-- Info del canal actual -->
+      <div class="channel-info-bar" id="channelInfoBar">
+        <div class="channel-info-logo">
+          <img id="infoLogo" src="" alt="">
+        </div>
+        <div class="channel-info-details">
+          <div class="channel-info-name" id="infoName">Sin canal seleccionado</div>
+          <div class="channel-info-meta">
+            <span>Categoría: <strong id="infoCategory">-</strong></span>
+            <span>Visitas: <strong id="infoVisits">0</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles -->
       <div class="controls">
         <button class="ctrl-btn" id="btnPrev">⏮ Anterior <kbd>←</kbd></button>
         <button class="ctrl-btn" id="btnNext">Siguiente ⏭ <kbd>→</kbd></button>
@@ -203,21 +466,10 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
         <button class="ctrl-btn primary" id="btnFullscreen">⛶ Pantalla Completa</button>
       </div>
 
+      <!-- Categorías -->
       <div class="categories" id="categories"></div>
     </div>
-  </main>
-
-  <!-- Channel Panel -->
-  <aside class="channel-panel">
-    <div class="panel-header">
-      <div class="panel-title">Canales</div>
-      <div class="panel-count" id="channelCount">0</div>
-    </div>
-    <div class="search-box">
-      <input type="text" class="search-input" id="searchInput" placeholder="Buscar canal...">
-    </div>
-    <div class="channel-list" id="channelList"></div>
-  </aside>
+  </div>
 </div>
 
 <div class="kbd-bar">
@@ -238,7 +490,7 @@ const $=id=>document.getElementById(id);
 const savedUser=localStorage.getItem('nubaraPlayUser');
 if(!savedUser){window.location.href='index.html'}
 else{$('userInfo').textContent=JSON.parse(savedUser).tipo==='demo'?'DEMO':'PREMIUM'}
-$('btnSalir').onclick=()=>{localStorage.removeItem('nubaraPlayUser');location.href='index.html'};
+$('btnSalir')?.addEventListener('click',()=>{localStorage.removeItem('nubaraPlayUser');location.href='index.html'});
 $('btnVolver').onclick=()=>history.back();
 
 // Firebase
@@ -302,10 +554,11 @@ function renderChannels(){
     const item=document.createElement('div');
     item.className='channel-item'+(ch.id===playingId?' playing':'')+(i===focusedIndex?' focused':'');
     item.innerHTML=`
+      <div class="channel-number">${i+1}</div>
       <div class="channel-logo"><img src="${ch.logo||''}" onerror="this.src='https://via.placeholder.com/120x90/1a1a24/8a8a9a?text=TV'"></div>
       <div class="channel-info">
         <div class="channel-name">${ch.nombre}</div>
-        <div class="channel-cat">${ch.categoria||'TV'}</div>
+        <div class="channel-category">${ch.categoria||'TV'}</div>
       </div>
     `;
     item.onclick=()=>{focusedIndex=i;playChannel(ch)};
@@ -322,18 +575,22 @@ function updateFocus(){
   });
 }
 
-// Play channel - INSTANT
+// Play channel
 function playChannel(ch){
   playingId=ch.id;
   $('playerEmpty').style.display='none';
-  $('playerTitle').textContent=ch.nombre;
-  $('playerCategory').textContent=ch.categoria||'TV';
-  $('loadingBar').classList.add('active');
+  $('loadingOverlay').classList.add('active');
   
-  // Instant load
+  // Update info bar
+  $('infoName').textContent=ch.nombre;
+  $('infoCategory').textContent=ch.categoria||'TV';
+  $('infoVisits').textContent=ch.visitas||0;
+  $('infoLogo').src=ch.logo||'';
+  
+  // Load iframe
   $('playerFrame').src=ch.url||'';
   
-  setTimeout(()=>$('loadingBar').classList.remove('active'),2000);
+  setTimeout(()=>$('loadingOverlay').classList.remove('active'),2000);
   
   // History
   let h=getHist().filter(x=>x.id!==ch.id);
@@ -347,13 +604,13 @@ function playChannel(ch){
   renderChannels();
 }
 
-// Navigation - INSTANT CHANGE
+// Navigation - INSTANT
 function navigate(dir){
   const list=getFilteredChannels();
   if(!list.length)return;
   focusedIndex=(focusedIndex+dir+list.length)%list.length;
   updateFocus();
-  playChannel(list[focusedIndex]); // INSTANT PLAY
+  playChannel(list[focusedIndex]);
 }
 
 // Controls
@@ -374,19 +631,7 @@ $('btnFav').onclick=()=>{
 // Search
 $('searchInput').oninput=e=>{searchQuery=e.target.value.toLowerCase();focusedIndex=0;renderChannels()};
 
-// Views
-document.querySelectorAll('.nav-item[data-view]').forEach(item=>{
-  item.onclick=()=>{
-    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-    item.classList.add('active');
-    currentView=item.dataset.view;
-    focusedIndex=0;
-    renderChannels();
-  };
-});
-$('btnHistorial').onclick=()=>{document.querySelector('[data-view="historial"]').click()};
-
-// KEYBOARD NAVIGATION - INSTANT
+// KEYBOARD NAVIGATION
 document.addEventListener('keydown',e=>{
   if(document.activeElement===$('searchInput')){
     if(e.key==='Escape'){$('searchInput').blur();searchQuery='';$('searchInput').value='';renderChannels()}
@@ -408,11 +653,11 @@ document.addEventListener('keydown',e=>{
       break;
     case 'ArrowLeft':
       e.preventDefault();
-      navigate(-1); // INSTANT
+      navigate(-1);
       break;
     case 'ArrowRight':
       e.preventDefault();
-      navigate(1);  // INSTANT
+      navigate(1);
       break;
     case 'Enter':
       e.preventDefault();
