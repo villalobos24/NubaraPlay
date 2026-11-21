@@ -19,7 +19,6 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
 #topbar .nav-btns{display:flex;gap:8px}
 #topbar .nav-btns button{background:rgba(20,20,25,.85);border:1px solid #2a2a32;color:var(--texto);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.5px;transition:.2s}
 #topbar .nav-btns button:hover{background:var(--morado);border-color:var(--morado)}
-#topbar .nav-btns button.active{background:var(--morado);border-color:var(--morado)}
 #topbar .user-info{display:flex;align-items:center;gap:12px}
 #topbar .user-tag{background:var(--morado);color:#fff;padding:4px 12px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:1px}
 #topbar .clock{color:var(--gris);font-family:monospace;font-size:12px}
@@ -37,7 +36,6 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
 #scroll{flex:1;overflow-y:auto;padding:4px 0}
 #scroll::-webkit-scrollbar{width:5px}#scroll::-webkit-scrollbar-thumb{background:#2a2a32;border-radius:3px}
 
-/* Sección (título de categoría) */
 .sec{
   padding:10px 16px 6px;font-size:10px;font-weight:700;
   letter-spacing:2px;text-transform:uppercase;
@@ -45,18 +43,17 @@ html,body{height:100%;overflow:hidden;background:#000;color:var(--texto);font-fa
   display:flex;align-items:center;gap:8px;
 }
 .sec::after{content:'';flex:1;height:1px;background:#1a1a22}
+.sec .rango{font-family:monospace;font-size:9px;color:#555;margin-left:auto}
 
-/* Canal */
 .ch{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;letter-spacing:.4px;border-left:3px solid transparent;transition:.12s}
 .ch:hover{background:rgba(255,255,255,.04)}
 .ch.sel{background:rgba(168,85,247,.22);border-left-color:var(--morado)}
-.ch .n{color:var(--gris);min-width:24px;font-weight:700}
+.ch .n{color:var(--gris);min-width:34px;font-weight:700;font-family:monospace;font-size:12px}
 .ch.sel .n{color:var(--morado)}
 .ch .sep{color:#333}
 .ch .nom{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch.play .nom::after{content:' ▶';color:var(--morado);font-size:10px}
 
-/* Evento de agenda (dentro de la misma lista) */
 .ev{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:12px;border-left:3px solid transparent;transition:.12s;background:rgba(168,85,247,.04)}
 .ev:hover{background:rgba(168,85,247,.12)}
 .ev.sel{background:rgba(168,85,247,.25);border-left-color:var(--morado)}
@@ -149,8 +146,27 @@ const firebaseConfig={apiKey:"AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",authDomai
 try{firebase.initializeApp(firebaseConfig)}catch(e){}
 const db=firebase.firestore();
 
+/* ============================================================
+   RANGOS POR CATEGORÍA (100 lugares cada una)
+   Si agregas más categorías, sigue el patrón de 100 en 100
+   ============================================================ */
+const RANGOS = {
+  'Cine':            {inicio: 1,   fin: 100},
+  'Deportes':        {inicio: 101, fin: 200},
+  'Infantil':        {inicio: 201, fin: 300},
+  'Noticias':        {inicio: 301, fin: 400},
+  'Entretenimiento': {inicio: 401, fin: 500},
+  'Música':          {inicio: 501, fin: 600},
+  'Cultura':         {inicio: 601, fin: 700},
+  'Religión':        {inicio: 701, fin: 800},
+  'Variedades':      {inicio: 801, fin: 900},
+  'Series':          {inicio: 901, fin: 1000},
+};
+const RANGO_DEFAULT = {inicio: 1001, fin: 9999}; // para categorías no mapeadas
+
+function formatoNum(n){return String(n).padStart(3,'0')}
+
 let canales=[], eventos=[], listaVisible=true, sel=0, playingId=null;
-// listaUnificada = array de items {tipo:'canal'|'evento'|'seccion', ...}
 let listaUnificada=[];
 
 function reloj(){
@@ -167,9 +183,8 @@ setInterval(reloj,1000);reloj();
 db.collection('canales').onSnapshot(snap=>{
   canales=[];
   snap.forEach(doc=>canales.push({id:doc.id,...doc.data()}));
-  canales.sort((a,b)=>(a.numero||0)-(b.numero||0)||String(a.nombre).localeCompare(String(b.nombre)));
   construirLista();
-},err=>{console.error('Firebase:',err)});
+},err=>console.error('Firebase:',err));
 
 db.collection('agenda').onSnapshot(snap=>{
   eventos=[];
@@ -177,76 +192,125 @@ db.collection('agenda').onSnapshot(snap=>{
   construirLista();
 },err=>console.error('Error agenda:',err));
 
+/* Asigna número dentro del rango de su categoría.
+   Respeta el campo 'numero' si ya viene de Firebase.
+   Si no, asigna el siguiente disponible en el rango. */
+function asignarNumerosPorCategoria(){
+  // Agrupar por categoría
+  const grupos={};
+  canales.forEach(c=>{
+    const cat=c.categoria||'Otros';
+    if(!grupos[cat])grupos[cat]=[];
+    grupos[cat].push(c);
+  });
+
+  Object.keys(grupos).forEach(cat=>{
+    const rango=RANGOS[cat]||RANGO_DEFAULT;
+    const lista=grupos[cat];
+    // Ordenar: primero los que ya tienen numero definido, luego por nombre
+    lista.sort((a,b)=>{
+      if(a.numero&&b.numero)return a.numero-b.numero;
+      if(a.numero)return -1;
+      if(b.numero)return 1;
+      return String(a.nombre).localeCompare(String(b.nombre));
+    });
+
+    // Asignar números disponibles en el rango
+    const ocupados=new Set();
+    lista.forEach(c=>{if(c.numero&&c.numero>=rango.inicio&&c.numero<=rango.fin)ocupados.add(c.numero)});
+
+    let siguiente=rango.inicio;
+    lista.forEach(c=>{
+      if(!c.numero||c.numero<rango.inicio||c.numero>rango.fin){
+        // buscar siguiente libre
+        while(ocupados.has(siguiente)&&siguiente<=rango.fin)siguiente++;
+        if(siguiente>rango.fin){
+          console.warn(`⚠️ Rango lleno para ${cat} (${rango.inicio}-${rango.fin}). Canal "${c.nombre}" sin número.`);
+          c._numDisplay='---';
+        }else{
+          c._numDisplay=formatoNum(siguiente);
+          ocupados.add(siguiente);
+          siguiente++;
+        }
+      }else{
+        c._numDisplay=formatoNum(c.numero);
+      }
+    });
+  });
+}
+
 function construirLista(){
   listaUnificada=[];
-  
-  // Sección 1: Canales agrupados por categoría
-  const cats=[...new Set(canales.map(c=>c.categoria).filter(Boolean))].sort();
-  if(cats.length){
-    cats.forEach(cat=>{
-      listaUnificada.push({tipo:'seccion', nombre:cat});
-      canales.filter(c=>c.categoria===cat).forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
-    });
-  }else{
-    listaUnificada.push({tipo:'seccion', nombre:'📺 Todos los canales'});
-    canales.forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
-  }
-  
-  // Sección 2: Agenda (si hay eventos)
+  asignarNumerosPorCategoria();
+
+  // Orden de categorías según RANGOS (las mapeadas primero, luego las demás)
+  const catsOrdenadas=Object.keys(RANGOS).filter(cat=>canales.some(c=>c.categoria===cat));
+  const catsExtra=[...new Set(canales.map(c=>c.categoria).filter(Boolean))].filter(c=>!RANGOS[c]).sort();
+  const todasCats=[...catsOrdenadas,...catsExtra];
+
+  todasCats.forEach(cat=>{
+    const rango=RANGOS[cat]||RANGO_DEFAULT;
+    const canalesCat=canales.filter(c=>c.categoria===cat)
+      .sort((a,b)=>{
+        const na=parseInt(a._numDisplay)||9999;
+        const nb=parseInt(b._numDisplay)||9999;
+        return na-nb;
+      });
+    if(!canalesCat.length)return;
+    listaUnificada.push({tipo:'seccion', nombre:cat, rango:`${formatoNum(rango.inicio)}-${formatoNum(rango.fin)}`});
+    canalesCat.forEach(c=>listaUnificada.push({tipo:'canal', data:c}));
+  });
+
+  // Agenda al final
   if(eventos.length){
-    listaUnificada.push({tipo:'seccion', nombre:'⚽ Agenda Deportiva'});
-    // ordenar: hoy primero, luego por hora
+    listaUnificada.push({tipo:'seccion', nombre:'⚽ Agenda Deportiva', rango:''});
     const orden={'HOY':0,'MAÑANA':1,'LUNES':2,'MARTES':3,'MIÉRCOLES':4,'JUEVES':5,'VIERNES':6,'SÁBADO':7,'DOMINGO':8};
     eventos.sort((a,b)=>(orden[(a.dia||'').toUpperCase()]??99)-(orden[(b.dia||'').toUpperCase()]??99)||(a.horaInicio||'').localeCompare(b.horaInicio||''));
     eventos.forEach(ev=>listaUnificada.push({tipo:'evento', data:ev}));
   }
-  
-  // Ajustar sel si se sale de rango
-  const navegables=listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento');
-  if(sel>=navegables.length)sel=0;
+
+  const nav=getNavegables();
+  if(sel>=nav.length)sel=0;
   render();
 }
 
-function getNavegables(){
-  return listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento');
-}
+function getNavegables(){return listaUnificada.filter(i=>i.tipo==='canal'||i.tipo==='evento')}
 
 function render(){
   const box=$('scroll');box.innerHTML='';
   if(!listaUnificada.length){box.innerHTML='<div class="vacio">Cargando...</div>';return}
-  
-  const navegables=getNavegables();
-  let navIdx=-1; // índice dentro de navegables
-  
+  const nav=getNavegables();
+  const selItem=nav[sel];
+
   listaUnificada.forEach(item=>{
     if(item.tipo==='seccion'){
       const s=document.createElement('div');
       s.className='sec';
-      s.textContent=item.nombre;
+      s.innerHTML=`<span>${item.nombre}</span>${item.rango?`<span class="rango">${item.rango}</span>`:''}`;
       box.appendChild(s);
     }
     else if(item.tipo==='canal'){
-      navIdx++;
       const c=item.data;
-      const num=c.numero||(navIdx+1);
+      const esSel=selItem&&selItem.tipo==='canal'&&selItem.data.id===c.id;
       const d=document.createElement('div');
-      const esSel=(navegables[sel]&&navegables[sel].data&&navegables[sel].data.id===c.id);
       d.className='ch'+(esSel?' sel':'')+(c.id===playingId?' play':'');
-      d.innerHTML=`<span class="n">${num}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
-      d.onclick=()=>{sel=navIdx;playItem(navegables[sel])};
+      d.innerHTML=`<span class="n">${c._numDisplay||'---'}</span><span class="sep">|</span><span class="nom">${c.nombre||'S/N'}</span>`;
+      d.onclick=()=>{
+        const idx=nav.findIndex(n=>n.tipo==='canal'&&n.data.id===c.id);
+        if(idx>=0){sel=idx;playItem(nav[sel])}
+      };
       box.appendChild(d);
     }
     else if(item.tipo==='evento'){
-      navIdx++;
       const ev=item.data;
       const ahora=new Date();
       const hhmm=String(ahora.getHours()).padStart(2,'0')+':'+String(ahora.getMinutes()).padStart(2,'0');
       let badge='';
       if(ev.horaInicio&&ev.horaFin){
-        if(hhmm>=ev.horaInicio&&hhmm<=ev.horaFin) badge='<span class="badge vivo">EN VIVO</span>';
-        else if(hhmm<ev.horaInicio) badge='<span class="badge prox">PRÓXIMO</span>';
+        if(hhmm>=ev.horaInicio&&hhmm<=ev.horaFin)badge='<span class="badge vivo">EN VIVO</span>';
+        else if(hhmm<ev.horaInicio)badge='<span class="badge prox">PRÓXIMO</span>';
       }
-      const esSel=(navegables[sel]&&navegables[sel].data&&navegables[sel].data.id===ev.id);
+      const esSel=selItem&&selItem.tipo==='evento'&&selItem.data.id===ev.id;
       const d=document.createElement('div');
       d.className='ev'+(esSel?' sel':'');
       d.innerHTML=`
@@ -256,12 +320,14 @@ function render(){
           <div class="meta">${ev.dia||''} ${ev.horaInicio||''}-${ev.horaFin||''} · ${ev.canal||''}</div>
         </div>
       `;
-      d.onclick=()=>{sel=navIdx;playItem(navegables[sel])};
+      d.onclick=()=>{
+        const idx=nav.findIndex(n=>n.tipo==='evento'&&n.data.id===ev.id);
+        if(idx>=0){sel=idx;playItem(nav[sel])}
+      };
       box.appendChild(d);
     }
   });
-  
-  // Scroll al seleccionado
+
   const els=box.querySelectorAll('.ch.sel, .ev.sel');
   if(els[0])els[0].scrollIntoView({block:'nearest',behavior:'smooth'});
 }
@@ -273,14 +339,13 @@ function playItem(item){
     playingId=c.id;
     $('empty').style.display='none';
     $('frame').src=c.url||'';
-    const num=c.numero||(sel+1);
-    $('titulo').innerHTML=`<span style="color:var(--morado)">${num}</span> | ${c.nombre||'SIN SEÑAL'}`;
+    $('titulo').innerHTML=`<span style="color:var(--morado)">${c._numDisplay||''}</span> | ${c.nombre||'SIN SEÑAL'}`;
     $('lbox').innerHTML=c.logo?`<img src="${c.logo}">`:'';
     $('logoCanal').style.display='flex';
     $('logoCanal').innerHTML=(c.logo?`<img src="${c.logo}">`:'')+`<span>${c.nombre||''}</span>`;
     $('ahora').textContent=c.ahora||'No hay información disponible';
     $('siguiente').textContent=c.siguiente||'No hay información disponible';
-    $('catChip').textContent='TV';
+    $('catChip').textContent=c.categoria||'TV';
   }else if(item.tipo==='evento'){
     const ev=item.data;
     playingId='agenda-'+ev.id;
