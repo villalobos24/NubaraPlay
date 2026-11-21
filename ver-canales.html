@@ -4,481 +4,437 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NubaraPlay IPTV</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0a0a0f;
-  --sidebar-bg:#12121a;
-  --surface:#1a1a24;
-  --border:#2a2a35;
-  --text:#ffffff;
-  --text-dim:#8a8a9a;
-  --accent:#8b5cf6;
-  --accent-hover:#7c3aed;
-  --success:#10b981;
-  --warning:#f59e0b;
-  --danger:#ef4444;
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#000;color:#fff}
+
+/* ===== REPRODUCTOR A PANTALLA COMPLETA DE FONDO ===== */
+#playerFrame{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;height:100vh;
+  border:none;
+  z-index:1;
+  background:#000;
 }
-html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
-/* Layout principal: Sidebar izquierdo + Contenido derecho */
-.app{display:grid;grid-template-columns:320px 1fr;height:100vh}
-
-/* ===== SIDEBAR IZQUIERDO (Lista de canales) ===== */
-.sidebar{
-  background:var(--sidebar-bg);
-  border-right:1px solid var(--border);
+/* ===== OVERLAY COMPLETO (capa sobre el reproductor) ===== */
+.overlay{
+  position:fixed;
+  top:0;left:0;
+  width:100vw;height:100vh;
+  z-index:10;
+  pointer-events:none;
   display:flex;
   flex-direction:column;
-  overflow:hidden;
-}
-
-.sidebar-header{
-  padding:20px;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
   justify-content:space-between;
 }
-.sidebar-title{font-size:16px;font-weight:700;letter-spacing:-0.3px}
-.sidebar-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)}
+.overlay>*{pointer-events:auto}
 
-.search-box{padding:16px 20px;border-bottom:1px solid var(--border)}
-.search-input{
-  width:100%;
-  padding:12px 16px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--text);
-  font-size:14px;
-  outline:none;
-  transition:border-color .2s;
+/* ===== LISTA DE CANALES (flotante arriba-izquierda, transparente) ===== */
+.channel-list-panel{
+  position:absolute;
+  top:20px;
+  left:20px;
+  width:320px;
+  max-height:calc(100vh - 220px);
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border-radius:4px;
+  overflow:hidden;
+  transition:opacity .3s, transform .3s;
 }
-.search-input:focus{border-color:var(--accent)}
-.search-input::placeholder{color:var(--text-dim)}
+.channel-list-panel.hidden{
+  opacity:0;
+  transform:translateX(-20px);
+  pointer-events:none;
+}
 
-.channel-list{
-  flex:1;
+.channel-list-header{
+  padding:10px 16px 8px;
+  font-size:11px;
+  font-weight:700;
+  color:rgba(255,255,255,0.5);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+.channel-list-scroll{
+  max-height:calc(100vh - 280px);
   overflow-y:auto;
-  padding:12px;
+  padding:6px 0;
 }
-.channel-list::-webkit-scrollbar{width:6px}
-.channel-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.channel-list-scroll::-webkit-scrollbar{width:4px}
+.channel-list-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:2px}
 
-.channel-item{
+.channel-row{
   display:flex;
   align-items:center;
-  gap:14px;
-  padding:14px 16px;
-  margin-bottom:8px;
-  border-radius:8px;
+  padding:8px 16px;
   cursor:pointer;
-  transition:all .2s;
-  border:2px solid transparent;
-  position:relative;
+  transition:background .15s;
+  border-left:3px solid transparent;
 }
-.channel-item:hover{
-  background:var(--surface);
-  transform:translateX(4px);
+.channel-row:hover{background:rgba(255,255,255,0.08)}
+.channel-row.focused{
+  background:rgba(139,92,246,0.35);
+  border-left-color:#8b5cf6;
 }
-.channel-item.focused{
-  background:rgba(139,92,246,0.15);
-  border-color:var(--accent);
+.channel-row.playing{
+  background:rgba(139,92,246,0.5);
+  border-left-color:#a78bfa;
 }
-.channel-item.playing{
-  background:rgba(139,92,246,0.2);
-  border-color:var(--accent);
-}
-.channel-item.playing::before{
-  content:'▶';
-  position:absolute;
-  right:14px;
-  color:var(--accent);
-  font-size:12px;
-  animation:pulse 1.5s infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
-.channel-number{
+.channel-num{
   font-family:'JetBrains Mono',monospace;
   font-size:13px;
   font-weight:700;
-  color:var(--text-dim);
-  min-width:28px;
-  text-align:center;
+  color:rgba(255,255,255,0.5);
+  min-width:36px;
+  text-align:right;
+  margin-right:12px;
 }
-.channel-item.playing .channel-number{color:var(--accent)}
+.channel-row.playing .channel-num,
+.channel-row.focused .channel-num{color:#fff}
 
-.channel-logo{
-  width:48px;
-  height:36px;
-  background:var(--surface);
-  border-radius:6px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  flex-shrink:0;
+.channel-divider{
+  color:rgba(255,255,255,0.3);
+  margin-right:12px;
+  font-size:13px;
 }
-.channel-logo img{max-width:90%;max-height:90%;object-fit:contain}
 
-.channel-info{flex:1;min-width:0}
 .channel-name{
   font-size:14px;
   font-weight:600;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  margin-bottom:2px;
-}
-.channel-category{
-  font-size:11px;
-  color:var(--text-dim);
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-}
-
-/* ===== CONTENIDO DERECHO (Reproductor + Info) ===== */
-.content{
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-
-/* Header superior */
-.topbar{
-  padding:16px 24px;
-  background:var(--sidebar-bg);
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-.logo{font-size:20px;font-weight:800;letter-spacing:-0.5px}
-.logo span{color:var(--accent)}
-.topbar-actions{display:flex;gap:12px;align-items:center}
-.topbar-btn{
-  padding:8px 16px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:6px;
-  color:var(--text-dim);
-  font-size:13px;
-  font-weight:500;
-  cursor:pointer;
-  transition:all .2s;
-}
-.topbar-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.user-info{display:flex;align-items:center;gap:12px}
-.user-badge{
-  padding:4px 12px;
-  background:var(--accent);
-  color:#fff;
-  border-radius:4px;
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:1px;
-}
-.clock{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text-dim)}
-
-/* Área del reproductor */
-.player-area{
   flex:1;
-  display:flex;
-  flex-direction:column;
-  padding:24px;
-  gap:20px;
-  overflow:hidden;
 }
+.channel-row.playing .channel-name{color:#fff;font-weight:700}
 
-.player-wrapper{
-  position:relative;
-  background:#000;
-  border-radius:12px;
-  overflow:hidden;
-  aspect-ratio:16/9;
-  max-height:calc(100vh - 320px);
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
-  border:1px solid var(--border);
-}
-.player-wrapper iframe{width:100%;height:100%;border:none}
-
-.player-empty{
+/* ===== BARRA INFERIOR DE INFORMACIÓN ===== */
+.info-bar{
   position:absolute;
-  inset:0;
+  bottom:0;left:0;right:0;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,0.85) 30%,rgba(0,0,0,0.95) 100%);
+  padding:40px 30px 20px;
   display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:16px;
-  background:linear-gradient(135deg,#1a1a24 0%,#0a0a0f 100%);
-}
-.player-empty .icon{font-size:64px;opacity:0.3}
-.player-empty .text{font-size:16px;color:var(--text-dim)}
-.player-empty .subtext{font-size:13px;color:var(--text-dim);opacity:0.6}
-
-.loading-overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,0.8);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  gap:16px;
-  backdrop-filter:blur(10px);
-}
-.loading-overlay.active{display:flex}
-.loader{
-  width:60px;
-  height:60px;
-  border:4px solid rgba(139,92,246,0.2);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:1px}
-
-/* Info del canal (barra inferior) */
-.channel-info-bar{
-  background:var(--sidebar-bg);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:20px 24px;
-  display:flex;
-  align-items:center;
+  align-items:flex-end;
+  justify-content:space-between;
   gap:20px;
 }
-.channel-info-logo{
-  width:64px;
-  height:48px;
-  background:var(--surface);
-  border-radius:8px;
+
+.info-left{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex:1;
+  min-width:0;
+}
+
+.info-logo{
+  width:72px;
+  height:54px;
+  background:rgba(255,255,255,0.1);
+  border-radius:6px;
   display:flex;
   align-items:center;
   justify-content:center;
   overflow:hidden;
   flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.15);
 }
-.channel-info-logo img{max-width:90%;max-height:90%;object-fit:contain}
-.channel-info-details{flex:1}
-.channel-info-name{font-size:20px;font-weight:700;margin-bottom:4px}
-.channel-info-meta{display:flex;gap:20px;font-size:13px;color:var(--text-dim)}
-.channel-info-meta span{display:flex;align-items:center;gap:6px}
-.channel-info-meta strong{color:var(--text);font-weight:600}
+.info-logo img{max-width:90%;max-height:90%;object-fit:contain}
 
-/* Controles */
-.controls{
+.info-details{flex:1;min-width:0}
+.info-channel-title{
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:-0.5px;
+  margin-bottom:6px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.info-channel-title .num{
+  color:#a78bfa;
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  margin-right:8px;
+}
+.info-channel-title .name{color:#fff}
+
+.info-meta{
   display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:13px;
+}
+.info-meta-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.info-meta-label{
+  color:rgba(255,255,255,0.5);
+  font-weight:500;
+  min-width:80px;
+}
+.info-meta-value{
+  color:rgba(255,255,255,0.85);
+  font-weight:600;
+}
+
+/* Info derecha (ayuda + reloj) */
+.info-right{
+  text-align:right;
+  flex-shrink:0;
+}
+.info-help{
+  font-size:12px;
+  color:rgba(255,255,255,0.6);
+  margin-bottom:4px;
+  font-weight:500;
+}
+.info-help strong{color:rgba(255,255,255,0.9);font-weight:700}
+.info-datetime{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  color:rgba(255,255,255,0.7);
+  margin-top:8px;
+  font-weight:500;
+}
+
+/* ===== INDICADOR DE CARGA ===== */
+.loading-indicator{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:5;
+  display:none;
+  flex-direction:column;
   align-items:center;
   gap:12px;
-  padding:0 4px;
-  flex-wrap:wrap;
-}
-.ctrl-btn{
-  padding:10px 18px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--text);
-  font-size:13px;
-  font-weight:600;
-  cursor:pointer;
-  transition:all .2s;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.ctrl-btn:hover{background:var(--accent);border-color:var(--accent);transform:translateY(-2px)}
-.ctrl-btn:active{transform:translateY(0)}
-.ctrl-btn.primary{background:var(--accent);border-color:var(--accent)}
-.ctrl-btn.primary:hover{background:var(--accent-hover)}
-.ctrl-btn kbd{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;
-  padding:2px 6px;
-  background:rgba(255,255,255,0.1);
-  border-radius:3px;
-  color:var(--text-dim);
-}
-.zoom-control{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 12px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:8px;
-}
-.zoom-control button{
-  width:28px;
-  height:28px;
-  background:transparent;
-  border:none;
-  color:var(--text);
-  cursor:pointer;
-  border-radius:4px;
-  font-size:16px;
-  font-weight:700;
-}
-.zoom-control button:hover{background:var(--accent)}
-.zoom-control span{
-  font-family:'JetBrains Mono',monospace;
-  font-size:13px;
-  min-width:48px;
-  text-align:center;
-  font-weight:600;
-}
-
-/* Categorías */
-.categories{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  padding:0 4px;
-}
-.cat-chip{
-  padding:8px 16px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:20px;
-  font-size:12px;
-  font-weight:600;
-  color:var(--text-dim);
-  cursor:pointer;
-  transition:all .2s;
-}
-.cat-chip:hover{border-color:var(--accent);color:var(--text)}
-.cat-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
-
-/* Keyboard hints */
-.kbd-bar{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:16px;
-  padding:10px 20px;
-  background:rgba(18,18,26,0.95);
-  border:1px solid var(--border);
+  background:rgba(0,0,0,0.7);
+  padding:24px 32px;
   border-radius:8px;
   backdrop-filter:blur(10px);
-  font-size:11px;
-  color:var(--text-dim);
-  z-index:100;
 }
-.kbd-bar span{display:flex;align-items:center;gap:6px}
-.kbd-bar kbd{
+.loading-indicator.active{display:flex}
+.loading-spinner{
+  width:40px;height:40px;
+  border:3px solid rgba(255,255,255,0.1);
+  border-top-color:#8b5cf6;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;letter-spacing:1px}
+
+/* ===== EMPTY STATE ===== */
+.empty-state{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:4;
+  text-align:center;
+  color:rgba(255,255,255,0.4);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.empty-state.active{display:flex}
+.empty-state .icon{font-size:64px;opacity:0.5}
+.empty-state .text{font-size:16px;font-weight:600}
+.empty-state .sub{font-size:13px;opacity:0.6}
+
+/* ===== TOGGLE BUTTON (para mostrar/ocultar lista) ===== */
+.toggle-list-btn{
+  position:fixed;
+  top:20px;left:20px;
+  z-index:20;
+  padding:10px 14px;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:6px;
+  color:#fff;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  display:none;
+}
+.toggle-list-btn:hover{background:rgba(139,92,246,0.5)}
+.toggle-list-btn.visible{display:block}
+
+/* ===== SEARCH BOX (flotante) ===== */
+.search-float{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:25;
+  display:none;
+}
+.search-float.active{display:block}
+.search-float input{
+  width:400px;
+  padding:12px 20px;
+  background:rgba(0,0,0,0.85);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(139,92,246,0.5);
+  border-radius:8px;
+  color:#fff;
+  font-size:15px;
+  outline:none;
+  font-family:'Inter',sans-serif;
+}
+.search-float input::placeholder{color:rgba(255,255,255,0.4)}
+
+/* ===== KEYBOARD HINTS (esquina inferior) ===== */
+.kbd-hints{
+  position:fixed;
+  bottom:100px;
+  right:20px;
+  z-index:15;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:11px;
+  color:rgba(255,255,255,0.5);
+  text-align:right;
+}
+.kbd-hints span{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.kbd-hints kbd{
   font-family:'JetBrains Mono',monospace;
   padding:2px 6px;
-  background:var(--surface);
-  border:1px solid var(--border);
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
   border-radius:3px;
-  color:var(--text);
+  color:rgba(255,255,255,0.8);
   font-size:10px;
+  font-weight:600;
 }
 
-/* Responsive */
-@media(max-width:1200px){
-  .app{grid-template-columns:280px 1fr}
+/* ===== CATEGORY FILTER (arriba derecha, pequeño) ===== */
+.cat-filter{
+  position:fixed;
+  top:20px;right:20px;
+  z-index:20;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  max-width:400px;
+  justify-content:flex-end;
 }
-@media(max-width:900px){
-  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  .sidebar{max-height:40vh}
-  .kbd-bar{display:none}
+.cat-btn{
+  padding:6px 12px;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:4px;
+  color:rgba(255,255,255,0.7);
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+}
+.cat-btn:hover{border-color:rgba(255,255,255,0.4);color:#fff}
+.cat-btn.active{background:rgba(139,92,246,0.6);border-color:#8b5cf6;color:#fff}
+
+/* Responsive */
+@media(max-width:768px){
+  .channel-list-panel{width:calc(100vw - 40px);max-height:50vh}
+  .channel-list-scroll{max-height:45vh}
+  .info-channel-title{font-size:20px}
+  .info-logo{width:56px;height:42px}
+  .kbd-hints{display:none}
 }
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- SIDEBAR IZQUIERDO: Lista de canales -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">📺 Canales</div>
-      <div class="sidebar-count" id="channelCount">0</div>
-    </div>
-    <div class="search-box">
-      <input type="text" class="search-input" id="searchInput" placeholder="Buscar canal...">
-    </div>
-    <div class="channel-list" id="channelList"></div>
-  </aside>
 
-  <!-- CONTENIDO DERECHO: Reproductor + Info -->
-  <div class="content">
-    <!-- Header superior -->
-    <header class="topbar">
-      <div class="logo">Nubara<span>Play</span></div>
-      <div class="topbar-actions">
-        <button class="topbar-btn" id="btnVolver">← Volver</button>
-        <button class="topbar-btn" id="btnHistorial">Historial</button>
-      </div>
-      <div class="user-info">
-        <span class="user-badge" id="userInfo">USUARIO</span>
-        <span class="clock" id="clock">--:--</span>
-      </div>
-    </header>
+<!-- REPRODUCTOR A PANTALLA COMPLETA -->
+<iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
 
-    <!-- Área del reproductor -->
-    <div class="player-area">
-      <div class="player-wrapper" id="playerWrapper">
-        <div class="loading-overlay" id="loadingOverlay">
-          <div class="loader"></div>
-          <div class="loading-text">CARGANDO...</div>
-        </div>
-        <iframe id="playerFrame" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-        <div class="player-empty" id="playerEmpty">
-          <div class="icon">📡</div>
-          <div class="text">Selecciona un canal</div>
-          <div class="subtext">Usa ↑↓ para navegar · Enter para reproducir</div>
-        </div>
-      </div>
+<!-- INDICADOR DE CARGA -->
+<div class="loading-indicator" id="loadingIndicator">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">CARGANDO SEÑAL...</div>
+</div>
 
-      <!-- Info del canal actual -->
-      <div class="channel-info-bar" id="channelInfoBar">
-        <div class="channel-info-logo">
-          <img id="infoLogo" src="" alt="">
+<!-- ESTADO VACÍO -->
+<div class="empty-state active" id="emptyState">
+  <div class="icon">📡</div>
+  <div class="text">Sin señal</div>
+  <div class="sub">Usa ↑↓ para navegar · Enter para reproducir</div>
+</div>
+
+<!-- BOTÓN TOGGLE LISTA -->
+<button class="toggle-list-btn visible" id="toggleListBtn">☰ Lista</button>
+
+<!-- BÚSQUEDA FLOTANTE -->
+<div class="search-float" id="searchFloat">
+  <input type="text" id="searchInput" placeholder="Buscar canal...">
+</div>
+
+<!-- FILTRO DE CATEGORÍAS -->
+<div class="cat-filter" id="catFilter"></div>
+
+<!-- OVERLAY PRINCIPAL -->
+<div class="overlay" id="overlay">
+  
+  <!-- LISTA DE CANALES (flotante transparente) -->
+  <div class="channel-list-panel" id="channelListPanel">
+    <div class="channel-list-header" id="listHeader">CANALES</div>
+    <div class="channel-list-scroll" id="channelListScroll"></div>
+  </div>
+
+  <!-- BARRA INFERIOR DE INFORMACIÓN -->
+  <div class="info-bar">
+    <div class="info-left">
+      <div class="info-logo">
+        <img id="infoLogo" src="" alt="">
+      </div>
+      <div class="info-details">
+        <div class="info-channel-title">
+          <span class="num" id="infoNum">--</span>
+          <span class="name" id="infoName">SIN SEÑAL</span>
         </div>
-        <div class="channel-info-details">
-          <div class="channel-info-name" id="infoName">Sin canal seleccionado</div>
-          <div class="channel-info-meta">
-            <span>Categoría: <strong id="infoCategory">-</strong></span>
-            <span>Visitas: <strong id="infoVisits">0</strong></span>
+        <div class="info-meta">
+          <div class="info-meta-row">
+            <span class="info-meta-label">Ahora:</span>
+            <span class="info-meta-value" id="infoNow">No hay información disponible</span>
+          </div>
+          <div class="info-meta-row">
+            <span class="info-meta-label">Siguiente:</span>
+            <span class="info-meta-value" id="infoNext">No hay información disponible</span>
           </div>
         </div>
       </div>
-
-      <!-- Controles -->
-      <div class="controls">
-        <button class="ctrl-btn" id="btnPrev">⏮ Anterior <kbd>←</kbd></button>
-        <button class="ctrl-btn" id="btnNext">Siguiente ⏭ <kbd>→</kbd></button>
-        <button class="ctrl-btn" id="btnMute">🔊 <kbd>M</kbd></button>
-        <div class="zoom-control">
-          <button id="btnZoomOut">−</button>
-          <span id="zoomVal">100%</span>
-          <button id="btnZoomIn">+</button>
-        </div>
-        <button class="ctrl-btn" id="btnFav">☆ Favorito <kbd>F</kbd></button>
-        <button class="ctrl-btn primary" id="btnFullscreen">⛶ Pantalla Completa</button>
-      </div>
-
-      <!-- Categorías -->
-      <div class="categories" id="categories"></div>
+    </div>
+    <div class="info-right">
+      <div class="info-help"><strong>Lista de Canales/Favoritos</strong></div>
+      <div class="info-help">Agregar/Eliminar Favoritos <span style="color:#8b5cf6">●</span> <span style="color:rgba(255,255,255,0.3)">●</span></div>
+      <div class="info-datetime" id="datetime">--:-- | --/--/----</div>
     </div>
   </div>
 </div>
 
-<div class="kbd-bar">
+<!-- AYUDA DE TECLADO -->
+<div class="kbd-hints">
   <span><kbd>↑</kbd><kbd>↓</kbd> Navegar</span>
-  <span><kbd>←</kbd><kbd>→</kbd> Cambiar canal</span>
   <span><kbd>Enter</kbd> Reproducir</span>
-  <span><kbd>M</kbd> Mute</span>
+  <span><kbd>L</kbd> Lista</span>
+  <span><kbd>S</kbd> Buscar</span>
   <span><kbd>F</kbd> Favorito</span>
-  <span><kbd>Esc</kbd> Salir</span>
+  <span><kbd>Esc</kbd> Ocultar</span>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -489,9 +445,7 @@ const $=id=>document.getElementById(id);
 // Auth
 const savedUser=localStorage.getItem('nubaraPlayUser');
 if(!savedUser){window.location.href='index.html'}
-else{$('userInfo').textContent=JSON.parse(savedUser).tipo==='demo'?'DEMO':'PREMIUM'}
-$('btnSalir')?.addEventListener('click',()=>{localStorage.removeItem('nubaraPlayUser');location.href='index.html'});
-$('btnVolver').onclick=()=>history.back();
+$('btnSalir')?.addEventListener?.('click',()=>{localStorage.removeItem('nubaraPlayUser');location.href='index.html'});
 
 // Firebase
 const firebaseConfig={apiKey:"AIzaSyAEw7jfxJxbF3r5YvftUD6yJwpyEMmg9tQ",authDomain:"nubaraplay.firebaseapp.com",projectId:"nubaraplay",storageBucket:"nubaraplay.firebasestorage.app",messagingSenderId:"873822057409",appId:"1:873822057409:web:f854a974f457eedd0c7540"};
@@ -499,98 +453,96 @@ try{firebase.initializeApp(firebaseConfig)}catch(e){}
 const db=firebase.firestore();
 
 // State
-let channels=[],events=[];
-let currentView='tv',currentCat='Todos',searchQuery='';
-let zoom=100,muted=false,playingId=null,focusedIndex=0;
+let channels=[];
+let currentCat='Todos',searchQuery='';
+let playingId=null,focusedIndex=0,listVisible=true;
 
 const getFavs=()=>JSON.parse(localStorage.getItem('nubaraPlayFavoritos')||'[]');
 const getHist=()=>JSON.parse(localStorage.getItem('nubaraPlayHistorial')||'[]');
 
-// Clock
-function tickClock(){const d=new Date();let h=d.getHours();const m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM';h=h%12||12;$('clock').textContent=h+':'+m+' '+ap}
-setInterval(tickClock,1000);tickClock();
+// Clock + Date
+function updateDateTime(){
+  const d=new Date();
+  let h=d.getHours();const m=String(d.getMinutes()).padStart(2,'0');
+  const ap=h>=12?'PM':'AM';h=h%12||12;
+  const date=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  $('datetime').textContent=h+':'+m+' '+ap+' | '+date;
+}
+setInterval(updateDateTime,1000);updateDateTime();
 
 // Data
 db.collection('canales').onSnapshot(snap=>{
   channels=[];
-  snap.forEach(doc=>{const c=doc.data();if(c.categoria==='Peliculas')return;channels.push({id:doc.id,...c})});
+  snap.forEach(doc=>{const c=doc.data();if(c.categoria==='Peliculas')return;canales.push({id:doc.id,...c})});
   renderCategories();renderChannels();
-},err=>console.error('Error:',err));
-
-db.collection('agenda').onSnapshot(snap=>{
-  events=[];snap.forEach(doc=>events.push({id:doc.id,...doc.data()}));
 },err=>console.error('Error:',err));
 
 // Categories
 function renderCategories(){
   const cats=['Todos',...[...new Set(channels.map(c=>c.categoria).filter(Boolean))].sort()];
-  const box=$('categories');box.innerHTML='';
+  const box=$('catFilter');box.innerHTML='';
   cats.forEach(cat=>{
     const btn=document.createElement('button');
-    btn.className='cat-chip'+(cat===currentCat?' active':'');
+    btn.className='cat-btn'+(cat===currentCat?' active':'');
     btn.textContent=cat;
     btn.onclick=()=>{currentCat=cat;renderCategories();renderChannels()};
     box.appendChild(btn);
   });
 }
 
-// Channels
+// Filtered channels
 function getFilteredChannels(){
-  let list=currentView==='destacados'?channels.filter(c=>getFavs().includes(c.id)):
-           currentView==='historial'?getHist().map(x=>channels.find(c=>c.id===x.id)).filter(Boolean):
-           channels.filter(c=>currentCat==='Todos'||c.categoria===currentCat);
+  let list=channels.filter(c=>currentCat==='Todos'||c.categoria===currentCat);
   if(searchQuery)list=list.filter(c=>(c.nombre||'').toLowerCase().includes(searchQuery));
   return list;
 }
 
+// Render channels list
 function renderChannels(){
   const list=getFilteredChannels();
-  $('channelCount').textContent=list.length;
-  const box=$('channelList');box.innerHTML='';
+  $('listHeader').textContent='CANALES ('+list.length+')';
+  const box=$('channelListScroll');box.innerHTML='';
   
-  if(!list.length){box.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-dim)">No hay canales</div>';return}
+  if(!list.length){box.innerHTML='<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.4);font-size:13px">Sin resultados</div>';return}
   
   list.forEach((ch,i)=>{
-    const item=document.createElement('div');
-    item.className='channel-item'+(ch.id===playingId?' playing':'')+(i===focusedIndex?' focused':'');
-    item.innerHTML=`
-      <div class="channel-number">${i+1}</div>
-      <div class="channel-logo"><img src="${ch.logo||''}" onerror="this.src='https://via.placeholder.com/120x90/1a1a24/8a8a9a?text=TV'"></div>
-      <div class="channel-info">
-        <div class="channel-name">${ch.nombre}</div>
-        <div class="channel-category">${ch.categoria||'TV'}</div>
-      </div>
+    const row=document.createElement('div');
+    row.className='channel-row'+(ch.id===playingId?' playing':'')+(i===focusedIndex?' focused':'');
+    row.innerHTML=`
+      <span class="channel-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="channel-divider">|</span>
+      <span class="channel-name">${ch.nombre}</span>
     `;
-    item.onclick=()=>{focusedIndex=i;playChannel(ch)};
-    item.onmouseenter=()=>{focusedIndex=i;updateFocus()};
-    box.appendChild(item);
+    row.onclick=()=>{focusedIndex=i;playChannel(ch)};
+    box.appendChild(row);
   });
+  
+  // Scroll to focused
+  setTimeout(()=>{
+    const focused=box.querySelector('.focused');
+    if(focused)focused.scrollIntoView({block:'nearest',behavior:'smooth'});
+  },50);
 }
 
-function updateFocus(){
-  const items=$('channelList').querySelectorAll('.channel-item');
-  items.forEach((it,i)=>{
-    it.classList.toggle('focused',i===focusedIndex);
-    if(i===focusedIndex)it.scrollIntoView({block:'nearest',behavior:'smooth'});
-  });
-}
-
-// Play channel
+// Play channel - INSTANT
 function playChannel(ch){
   playingId=ch.id;
-  $('playerEmpty').style.display='none';
-  $('loadingOverlay').classList.add('active');
+  $('emptyState').classList.remove('active');
+  $('loadingIndicator').classList.add('active');
   
   // Update info bar
-  $('infoName').textContent=ch.nombre;
-  $('infoCategory').textContent=ch.categoria||'TV';
-  $('infoVisits').textContent=ch.visitas||0;
+  const list=getFilteredChannels();
+  const num=list.findIndex(c=>c.id===ch.id)+1;
+  $('infoNum').textContent=String(num).padStart(2,'0');
+  $('infoName').textContent=ch.nombre.toUpperCase();
   $('infoLogo').src=ch.logo||'';
+  $('infoNow').textContent=ch.categoria||'En vivo';
+  $('infoNext').textContent='No hay información disponible';
   
-  // Load iframe
+  // Load iframe INSTANT
   $('playerFrame').src=ch.url||'';
   
-  setTimeout(()=>$('loadingOverlay').classList.remove('active'),2000);
+  setTimeout(()=>$('loadingIndicator').classList.remove('active'),1500);
   
   // History
   let h=getHist().filter(x=>x.id!==ch.id);
@@ -604,37 +556,41 @@ function playChannel(ch){
   renderChannels();
 }
 
-// Navigation - INSTANT
+// Navigate - INSTANT CHANGE
 function navigate(dir){
   const list=getFilteredChannels();
   if(!list.length)return;
   focusedIndex=(focusedIndex+dir+list.length)%list.length;
-  updateFocus();
-  playChannel(list[focusedIndex]);
+  renderChannels();
+  playChannel(list[focusedIndex]); // INSTANT
 }
 
-// Controls
-$('btnPrev').onclick=()=>navigate(-1);
-$('btnNext').onclick=()=>navigate(1);
-$('btnMute').onclick=()=>{muted=!muted;$('btnMute').innerHTML=muted?'🔇 <kbd>M</kbd>':'🔊 <kbd>M</kbd>'};
-$('btnZoomIn').onclick=()=>{zoom=Math.min(200,zoom+10);$('playerFrame').style.transform=`scale(${zoom/100})`;$('zoomVal').textContent=zoom+'%'};
-$('btnZoomOut').onclick=()=>{zoom=Math.max(50,zoom-10);$('playerFrame').style.transform=`scale(${zoom/100})`;$('zoomVal').textContent=zoom+'%'};
-$('btnFullscreen').onclick=()=>{const el=$('playerWrapper');if(!document.fullscreenElement)el.requestFullscreen();else document.exitFullscreen()};
-$('btnFav').onclick=()=>{
+// Toggle list
+$('toggleListBtn').onclick=()=>{
+  listVisible=!listVisible;
+  $('channelListPanel').classList.toggle('hidden',!listVisible);
+  $('toggleListBtn').classList.toggle('visible',!listVisible);
+};
+
+// Search
+function openSearch(){$('searchFloat').classList.add('active');$('searchInput').value='';$('searchInput').focus()}
+function closeSearch(){$('searchFloat').classList.remove('active');searchQuery='';$('searchInput').value='';renderChannels()}
+$('searchInput').oninput=e=>{searchQuery=e.target.value.toLowerCase();focusedIndex=0;renderChannels()};
+$('searchInput').onkeydown=e=>{if(e.key==='Escape')closeSearch()};
+
+// Favorite
+function toggleFav(){
   if(!playingId)return;
   let f=getFavs();const i=f.indexOf(playingId);
   if(i>-1)f.splice(i,1);else f.push(playingId);
   localStorage.setItem('nubaraPlayFavoritos',JSON.stringify(f));
-  $('btnFav').innerHTML=f.includes(playingId)?'★ Favorito <kbd>F</kbd>':'☆ Favorito <kbd>F</kbd>';
-};
+}
 
-// Search
-$('searchInput').oninput=e=>{searchQuery=e.target.value.toLowerCase();focusedIndex=0;renderChannels()};
-
-// KEYBOARD NAVIGATION
+// KEYBOARD NAVIGATION - FULL CONTROL
 document.addEventListener('keydown',e=>{
+  // Si está en búsqueda
   if(document.activeElement===$('searchInput')){
-    if(e.key==='Escape'){$('searchInput').blur();searchQuery='';$('searchInput').value='';renderChannels()}
+    if(e.key==='Escape')closeSearch();
     return;
   }
 
@@ -644,12 +600,12 @@ document.addEventListener('keydown',e=>{
     case 'ArrowUp':
       e.preventDefault();
       focusedIndex=focusedIndex<=0?list.length-1:focusedIndex-1;
-      updateFocus();
+      renderChannels();
       break;
     case 'ArrowDown':
       e.preventDefault();
       focusedIndex=focusedIndex>=list.length-1?0:focusedIndex+1;
-      updateFocus();
+      renderChannels();
       break;
     case 'ArrowLeft':
       e.preventDefault();
@@ -663,13 +619,22 @@ document.addEventListener('keydown',e=>{
       e.preventDefault();
       if(focusedIndex>=0&&focusedIndex<list.length)playChannel(list[focusedIndex]);
       break;
-    case 'm':case 'M':
-      e.preventDefault();$('btnMute').click();break;
+    case 'l':case 'L':
+      e.preventDefault();
+      $('toggleListBtn').click();
+      break;
+    case 's':case 'S':
+      e.preventDefault();
+      openSearch();
+      break;
     case 'f':case 'F':
-      e.preventDefault();$('btnFav').click();break;
+      e.preventDefault();
+      toggleFav();
+      break;
     case 'Escape':
       e.preventDefault();
-      if(document.fullscreenElement)document.exitFullscreen();
+      if($('searchFloat').classList.contains('active'))closeSearch();
+      else if(listVisible){$('toggleListBtn').click()}
       break;
   }
 });
@@ -677,6 +642,14 @@ document.addEventListener('keydown',e=>{
 // Init
 renderCategories();
 renderChannels();
+
+// Auto-play first channel after 2s if nothing playing
+setTimeout(()=>{
+  if(!playingId&&channels.length>0){
+    const list=getFilteredChannels();
+    if(list.length>0)playChannel(list[0]);
+  }
+},2000);
 </script>
 </body>
 </html>
